@@ -5,9 +5,12 @@ import nltk
 import google.generativeai as genai
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
+from bs4 import BeautifulSoup
+from lxml import etree
+
 
 # Configuration variables
-WORDS_PER_CHUNK = 400
+WORDS_PER_CHUNK = 1500
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
 OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
 FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
@@ -56,47 +59,91 @@ def split_text(text, words_per_chunk):
     print(f"Text split into {len(chunks)} sections.")
     return chunks
 
-
-from bs4 import BeautifulSoup
+def preprocess_xml(xml_text):
+    # Entferne BOM, falls vorhanden
+    xml_text = xml_text.lstrip('\ufeff')
+    # Entferne Leerzeichen am Anfang
+    xml_text = xml_text.lstrip()
+    # Entferne XML-Deklaration, falls vorhanden
+    if xml_text.startswith('<?xml'):
+        xml_text = xml_text[xml_text.find('?>')+2:].lstrip()
+    return xml_text
 
 
 def split_xhtml_text(xhtml_text, words_per_chunk):
-    print(f"Splitting XHTML text into sections with approximately {words_per_chunk} words each...")
+    print(f"Splitting XHTML/XML text into sections with approximately {words_per_chunk} words each...")
 
-    # Parse the XHTML
-    soup = BeautifulSoup(xhtml_text, 'html.parser')
+    # Versuche zuerst das Dokument als XML zu parsen
+    try:
+        parser = etree.XMLParser(recover=True)
+        xhtml_text = preprocess_xml(xhtml_text)
+        root = etree.XML(xhtml_text, parser)
+        is_xml = True
+    except etree.XMLSyntaxError:
+        # Wenn XML-Parsing fehlschlägt, behandle es als HTML/XHTML
+        soup = BeautifulSoup(xhtml_text, 'html.parser')
+        is_xml = False
 
     chunks = []
     current_chunk = []
     current_word_count = 0
 
-    for element in soup.body.descendants:
-        if isinstance(element, str) and element.strip():
-            words = element.split()
+    def process_text(text):
+        nonlocal current_chunk, current_word_count
+        if text and text.strip():
+            words = text.split()
             if current_word_count + len(words) > words_per_chunk:
-                # If adding this text would exceed the word limit, start a new chunk
                 if current_chunk:
                     chunks.append(''.join(map(str, current_chunk)))
                 current_chunk = []
                 current_word_count = 0
 
-            current_chunk.append(element)
+            current_chunk.append(text)
             current_word_count += len(words)
-        elif element.name:
-            # For HTML tags, always include them in the current chunk
-            current_chunk.append(str(element))
 
-            # If it's a closing tag, and we're near or over the word limit, start a new chunk
-            if current_word_count >= words_per_chunk and element.name not in ['br', 'img', 'hr']:
-                chunks.append(''.join(map(str, current_chunk)))
-                current_chunk = []
-                current_word_count = 0
+    def process_element(element):
+        nonlocal current_chunk, current_word_count
 
-    # Add any remaining content as the last chunk
+        # Füge öffnendes Tag hinzu
+        current_chunk.append(f"<{element.tag}")
+        for name, value in element.attrib.items():
+            current_chunk.append(f' {name}="{value}"')
+        current_chunk.append(">")
+
+        if element.text:
+            process_text(element.text)
+
+        for child in element:
+            process_element(child)
+            if child.tail:
+                process_text(child.tail)
+
+        # Füge schließendes Tag hinzu
+        current_chunk.append(f"</{element.tag}>")
+
+        # Prüfe, ob wir einen neuen Chunk beginnen sollten
+        if current_word_count >= words_per_chunk:
+            chunks.append(''.join(map(str, current_chunk)))
+            current_chunk = []
+            current_word_count = 0
+
+    if is_xml:
+        process_element(root)
+    else:
+        for element in soup.descendants:
+            if isinstance(element, str):
+                process_text(element)
+            else:
+                current_chunk.append(str(element))
+                if current_word_count >= words_per_chunk and element.name not in ['br', 'img', 'hr']:
+                    chunks.append(''.join(map(str, current_chunk)))
+                    current_chunk = []
+                    current_word_count = 0
+
     if current_chunk:
         chunks.append(''.join(map(str, current_chunk)))
 
-    print(f"XHTML text split into {len(chunks)} sections.")
+    print(f"XHTML/XML text split into {len(chunks)} sections.")
     return chunks
 
 
@@ -136,41 +183,63 @@ def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_facto
 
 
 def process_file(filename, model, prompt):
-    # Processes a single file.
     print(f"\n=== Processing file: {filename} ===")
     file_path = os.path.join(DIRECTORY_PATH, filename)
 
     print("Reading file content...")
     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-        text = f.read()
+        content = f.read()
     print("File content read.")
 
-    text_chunks = split_text(text, WORDS_PER_CHUNK)
+    # Determine file type and split accordingly
+    file_extension = os.path.splitext(filename)[1].lower()
+    if file_extension == '.txt':
+        text_chunks = split_text(content, WORDS_PER_CHUNK)
+    elif file_extension in ['.xml', '.xhtml', '.html']:
+        text_chunks = split_xhtml_text(content, WORDS_PER_CHUNK)
+    else:
+        print(f"Unsupported file type: {file_extension}")
+        return
+
     print(f"Text split into {len(text_chunks)} sections.")
 
     responses = []
     for i, chunk in enumerate(text_chunks):
-        print(f"Generating response for section {i+1}/{len(text_chunks)}...")
+        print(f"Generating response for section {i + 1}/{len(text_chunks)}...")
         try:
             time.sleep(1)
             response = generate_content_with_retries(model, prompt, chunk)
             if response.parts:
                 responses.append(response.text)
-                print(f"Response generated for section {i+1}.")
+                print(f"Response generated for section {i + 1}.")
             else:
-                error_message = f"!!! Section {i+1} did not return valid parts."
+                error_message = f"!!! Section {i + 1} did not return valid parts."
                 print(error_message)
                 responses.append(error_message)
         except ValueError as e:
-            error_message = f"!!! Error processing section {i+1}: {e}"
+            error_message = f"!!! Error processing section {i + 1}: {e}"
             print(error_message)
             responses.append(error_message)
 
     base_filename = os.path.splitext(filename)[0]
     full_response = f"## {base_filename}\n\n" + " ".join(responses)
-    md_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet.md')
 
-    save_as_md(full_response, md_filename)
+    # Save the processed content
+    if file_extension in ['.xml', '.xhtml', '.html']:
+        # For XHTML files, we need to insert the processed content back into the original structure
+        soup = BeautifulSoup(content, 'html.parser')
+        body = soup.find('body')
+        if body:
+            body.clear()
+            body.append(BeautifulSoup(full_response, 'html.parser'))
+
+        output_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet{file_extension}')
+        with open(output_filename, 'w', encoding='utf-8') as f:
+            f.write(str(soup))
+    else:
+        # For TXT files, save as markdown
+        md_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet.md')
+        save_as_md(full_response, md_filename)
 
     print(f"Moving processed file to {FINISHED_DIR}...")
     shutil.move(file_path, os.path.join(FINISHED_DIR, filename))
@@ -179,7 +248,6 @@ def process_file(filename, model, prompt):
 
 
 def main():
-    # Main function for script execution.
     print("=== Starting main program ===")
     setup_environment()
 
@@ -216,12 +284,12 @@ def main():
         - Vermeide drei folgende Punkte "..." im Text.
         Hier beginnt der Text des Transkripts:'''
 
-    print(f"Searching for .txt files in {DIRECTORY_PATH}...")
-    txt_files = [f for f in os.listdir(DIRECTORY_PATH) if f.endswith('.txt')]
-    print(f"{len(txt_files)} .txt files found.")
+    print(f"Searching for .txt and .xml/.xhtml/.html files in {DIRECTORY_PATH}...")
+    valid_files = [f for f in os.listdir(DIRECTORY_PATH) if f.endswith(('.txt', '.xml', '.xhtml', '.html'))]
+    print(f"{len(valid_files)} valid files found.")
 
-    for i, filename in enumerate(txt_files):
-        print(f"\nProcessing file {i+1}/{len(txt_files)}: {filename}")
+    for i, filename in enumerate(valid_files):
+        print(f"\nProcessing file {i + 1}/{len(valid_files)}: {filename}")
         process_file(filename, model, prompt)
 
     print("=== Script has processed all files ===")
