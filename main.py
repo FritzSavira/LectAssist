@@ -1,4 +1,3 @@
-#Test pust
 import os
 import time
 import shutil
@@ -55,6 +54,49 @@ def split_text(text, words_per_chunk):
         chunks.append(" ".join(current_chunk))
 
     print(f"Text split into {len(chunks)} sections.")
+    return chunks
+
+
+from bs4 import BeautifulSoup
+
+
+def split_xhtml_text(xhtml_text, words_per_chunk):
+    print(f"Splitting XHTML text into sections with approximately {words_per_chunk} words each...")
+
+    # Parse the XHTML
+    soup = BeautifulSoup(xhtml_text, 'html.parser')
+
+    chunks = []
+    current_chunk = []
+    current_word_count = 0
+
+    for element in soup.body.descendants:
+        if isinstance(element, str) and element.strip():
+            words = element.split()
+            if current_word_count + len(words) > words_per_chunk:
+                # If adding this text would exceed the word limit, start a new chunk
+                if current_chunk:
+                    chunks.append(''.join(map(str, current_chunk)))
+                current_chunk = []
+                current_word_count = 0
+
+            current_chunk.append(element)
+            current_word_count += len(words)
+        elif element.name:
+            # For HTML tags, always include them in the current chunk
+            current_chunk.append(str(element))
+
+            # If it's a closing tag, and we're near or over the word limit, start a new chunk
+            if current_word_count >= words_per_chunk and element.name not in ['br', 'img', 'hr']:
+                chunks.append(''.join(map(str, current_chunk)))
+                current_chunk = []
+                current_word_count = 0
+
+    # Add any remaining content as the last chunk
+    if current_chunk:
+        chunks.append(''.join(map(str, current_chunk)))
+
+    print(f"XHTML text split into {len(chunks)} sections.")
     return chunks
 
 
