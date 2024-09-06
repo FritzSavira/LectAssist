@@ -5,8 +5,6 @@ import nltk
 import google.generativeai as genai
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
-from bs4 import BeautifulSoup
-from lxml import etree
 
 # Configuration variables
 WORDS_PER_CHUNK = 1500
@@ -54,67 +52,7 @@ def split_text(text, words_per_chunk):
     print(f"Text split into {len(chunks)} sections.")
     return chunks
 
-def preprocess_xml(xml_text):
-    xml_text = xml_text.lstrip('\ufeff')
-    xml_text = xml_text.lstrip()
-    if xml_text.startswith('<?xml'):
-        xml_text = xml_text[xml_text.find('?>')+2:].lstrip()
-    return xml_text
 
-def split_xml_text(xml_text, words_per_chunk):
-    print(f"Splitting XML text into sections with approximately {words_per_chunk} words each...")
-
-    xml_text = preprocess_xml(xml_text)
-    parser = etree.XMLParser(recover=True)
-    root = etree.XML(xml_text, parser)
-
-    chunks = []
-    current_chunk = []
-    current_word_count = 0
-
-    def process_text(text):
-        nonlocal current_chunk, current_word_count
-        if text and text.strip():
-            words = text.split()
-            if current_word_count + len(words) > words_per_chunk:
-                if current_chunk:
-                    chunks.append(''.join(map(str, current_chunk)))
-                current_chunk = []
-                current_word_count = 0
-
-            current_chunk.append(text)
-            current_word_count += len(words)
-
-    def process_element(element):
-        nonlocal current_chunk, current_word_count
-
-        current_chunk.append(f"<{element.tag}")
-        for name, value in element.attrib.items():
-            current_chunk.append(f' {name}="{value}"')
-        current_chunk.append(">")
-
-        if element.text:
-            process_text(element.text)
-
-        for child in element:
-            process_element(child)
-            if child.tail:
-                process_text(child.tail)
-
-        current_chunk.append(f"</{element.tag}>")
-
-        if current_word_count >= words_per_chunk:
-            chunks.append(''.join(map(str, current_chunk)))
-            current_chunk = []
-            current_word_count = 0
-
-    process_element(root)
-
-    if current_chunk:
-        chunks.append(''.join(map(str, current_chunk)))
-
-    print(f"XML text split into {len(chunks)} sections.")
-    return chunks
 
 def save_as_md(text, filename):
     print(f"Saving Markdown file: {filename}")
@@ -156,15 +94,7 @@ def process_file(filename, model, prompt):
         content = f.read()
     print("File content read.")
 
-    file_extension = os.path.splitext(filename)[1].lower()
-    if file_extension == '.txt':
-        text_chunks = split_text(content, WORDS_PER_CHUNK)
-    elif file_extension == '.xml':
-        text_chunks = split_xml_text(content, WORDS_PER_CHUNK)
-    else:
-        print(f"Unsupported file type: {file_extension}")
-        return
-
+    text_chunks = split_text(content, WORDS_PER_CHUNK)
     print(f"Text split into {len(text_chunks)} sections.")
 
     responses = []
@@ -188,19 +118,8 @@ def process_file(filename, model, prompt):
     base_filename = os.path.splitext(filename)[0]
     full_response = f"## {base_filename}\n\n" + " ".join(responses)
 
-    if file_extension == '.xml':
-        soup = BeautifulSoup(content, 'xml')
-        body = soup.find('body')
-        if body:
-            body.clear()
-            body.append(BeautifulSoup(full_response, 'xml'))
-
-        output_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet{file_extension}')
-        with open(output_filename, 'w', encoding='utf-8') as f:
-            f.write(str(soup))
-    else:
-        md_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet.md')
-        save_as_md(full_response, md_filename)
+    md_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet.md')
+    save_as_md(full_response, md_filename)
 
     print(f"Moving processed file to {FINISHED_DIR}...")
     shutil.move(file_path, os.path.join(FINISHED_DIR, filename))
@@ -243,8 +162,8 @@ def main():
         - Vermeide drei folgende Punkte "..." im Text.
         Hier beginnt der Text des Transkripts:'''
 
-    print(f"Searching for .txt and .xml files in {DIRECTORY_PATH}...")
-    valid_files = [f for f in os.listdir(DIRECTORY_PATH) if f.endswith(('.txt', '.xml'))]
+    print(f"Searching for .txt files in {DIRECTORY_PATH}...")
+    valid_files = [f for f in os.listdir(DIRECTORY_PATH) if f.endswith('.txt')]
     print(f"{len(valid_files)} valid files found.")
 
     for i, filename in enumerate(valid_files):
