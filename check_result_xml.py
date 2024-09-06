@@ -3,6 +3,10 @@ from tkinter import font as tkfont
 from tkinter import filedialog, messagebox
 import json
 import re
+import os
+
+OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
+PROCESSED_LOG_FILE = os.path.join(OUTPUT_TXT_DIR, 'process.log')
 
 
 def highlight_word_differences(content_text, response_text):
@@ -122,7 +126,7 @@ all_entries = []
 
 def load_log(content_text, response_text, status_var, article_id_label):
     global current_entry, all_entries
-    file_path = filedialog.askopenfilename(filetypes=[("Log files", "*.log")])
+    file_path = PROCESSED_LOG_FILE
     if file_path:
         try:
             with open(file_path, 'r', encoding='utf-8') as file:

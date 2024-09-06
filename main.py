@@ -30,8 +30,8 @@ def initialize_model():
 def determine_processing_mode():
     # This function should be implemented to determine the processing mode
     # based on user input or command line arguments
-    processing_mode = "text"
-    #processing_mode = "xml"
+    #processing_mode = "text"
+    processing_mode = "xml"
     return processing_mode
     pass
 

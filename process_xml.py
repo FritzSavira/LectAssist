@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
 OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
 FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
-INPUT_FILE = os.path.join(DIRECTORY_PATH, 'DEPDBIBLEN-Content.xml')
+#INPUT_FILE = os.path.join(DIRECTORY_PATH, 'DEPDBIBLEN-Content.xml')
 OUTPUT_FILE = os.path.join(OUTPUT_TXT_DIR, 'output.xml')
 CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, 'checkpoint.json')
 MAX_RETRIES = 5
