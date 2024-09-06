@@ -2,7 +2,6 @@ import os
 import time
 import shutil
 import nltk
-import google.generativeai as genai
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
 
@@ -11,16 +10,10 @@ WORDS_PER_CHUNK = 1500
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
 OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
 FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
-MODEL_NAME = 'gemini-1.5-pro'
 
 def setup_environment():
     print("=== Initializing the environment ===")
     print(f"Number of words per section for processing: {WORDS_PER_CHUNK}")
-
-    print("Configuring API key...")
-    genai_api_key = os.getenv('GENAI_API_KEY')
-    genai.configure(api_key=genai_api_key)
-    print("API key configured.")
 
     print("Downloading NLTK punkt tokenizer...")
     nltk.download('punkt')
@@ -51,8 +44,6 @@ def split_text(text, words_per_chunk):
 
     print(f"Text split into {len(chunks)} sections.")
     return chunks
-
-
 
 def save_as_md(text, filename):
     print(f"Saving Markdown file: {filename}")
@@ -126,13 +117,8 @@ def process_file(filename, model, prompt):
     print(f"Processed file moved to {FINISHED_DIR}.")
     print(f"=== Processing of {filename} completed ===\n")
 
-def main():
-    print("=== Starting main program ===")
+def process_text_files(model):
     setup_environment()
-
-    print("Initializing generative model...")
-    model = genai.GenerativeModel(MODEL_NAME)
-    print("Generative model initialized.")
 
     prompt = '''Du bist ein professioneller Lektor und lektorierst das hochgeladene Transkript einer frei gesprochenen
         Predigt. Deine Aufgabe ist es, das folgende Transkript in einen gut lesbaren Text zu überarbeiten,
@@ -173,4 +159,7 @@ def main():
     print("=== Script has processed all files ===")
 
 if __name__ == "__main__":
-    main()
+    # This block is for testing purposes only
+    from main import initialize_model
+    model = initialize_model()
+    process_text_files(model)

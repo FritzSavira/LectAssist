@@ -4,21 +4,19 @@ import time
 import logging
 import json
 import xml.etree.ElementTree as ET
-import google.generativeai as genai
 
 # Constants
-MODEL_NAME = 'gemini-1.5-pro'
-INPUT_FILE = 'DEPDBIBLEN-Content.xml'
-OUTPUT_FILE = 'output.xml'
-CHECKPOINT_FILE = 'checkpoint.json'
-LOGGING_FILENAME = 'process_xml.log'
+DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
+OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
+FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
+INPUT_FILE = os.path.join(DIRECTORY_PATH, 'DEPDBIBLEN-Content.xml')
+OUTPUT_FILE = os.path.join(OUTPUT_TXT_DIR, 'output.xml')
+CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, 'checkpoint.json')
 MAX_RETRIES = 5
 BACKOFF_FACTOR = 0.3
 MIN_WORDS_PARAGRAPH = 5
 
-
 def get_prompt():
-    """Return the prompt for the AI model."""
     return '''Du bist ein professioneller Lektor und lektorierst die hochgeladenen Textfragmente des
         Calwer Bibellexikons der Ausgabe von 1912.
         Verwende den Wortschatz des 21. Jahrhunderts.
@@ -38,39 +36,10 @@ def get_prompt():
         - Vermeide jeglichen weiteren Kommentar.
           Hier beginnt das Textfragment der xml-Datei:'''
 
-
-def configure_logging():
-    """Configure logging with UTF-8 encoding."""
-    logging.basicConfig(
-        filename=LOGGING_FILENAME,
-        level=logging.INFO,
-        format='%(asctime)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        encoding='utf-8'
-    )
-
-
-def configure_api():
-    """Configure the Google Generative AI API."""
-    genai_api_key = os.getenv('GENAI_API_KEY')
-    if not genai_api_key:
-        raise ValueError("GENAI_API_KEY environment variable not set")
-    genai.configure(api_key=genai_api_key)
-    print("API key configured.")
-
-
-def initialize_model():
-    """Initialize the generative model."""
-    return genai.GenerativeModel(MODEL_NAME)
-
-
 def get_text(element: ET.Element) -> str:
-    """Extract text content from an XML element."""
     return ''.join(element.itertext())
 
-
 def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
-    """Generate content with retries on connection errors."""
     for attempt in range(MAX_RETRIES):
         try:
             print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
@@ -88,36 +57,26 @@ def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
             print(f"An error occurred in generate_content(): {e}")
             return str(e)
 
-
 def load_checkpoint():
-    """Load the checkpoint from a file."""
     if os.path.exists(CHECKPOINT_FILE):
         with open(CHECKPOINT_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
 
-
 def save_checkpoint(processed_articles):
-    """Save the checkpoint to a file."""
     with open(CHECKPOINT_FILE, 'w', encoding='utf-8') as f:
         json.dump(processed_articles, f, ensure_ascii=False)
 
-
 def update_checkpoint(processed_articles, article_id):
-    """Update the checkpoint with a newly processed article."""
     processed_articles[article_id] = True
     save_checkpoint(processed_articles)
 
-
 def compare_xml_tags(content: str, response: str) -> bool:
-    """Compare XML tags in content and response."""
     content_tags = re.findall(r'<[^>]+>', content)
     response_tags = re.findall(r'<[^>]+>', response)
     return content_tags == response_tags
 
-
 def process_paragraph(model, p):
-    """Process a single paragraph."""
     content = ET.tostring(p, encoding='unicode', method='xml')
     content_text = get_text(p)
     print(f"\nContent text: {content_text}")
@@ -143,9 +102,7 @@ def process_paragraph(model, p):
 
     return False, "Paragraph too short, skipped processing.", content_text, "N/A"
 
-
 def process_article(model, article, processed_articles):
-    """Process a single article."""
     article_id = article.get('id')
     if article_id in processed_articles:
         print(f"Skipping already processed article: {article_id}")
@@ -172,9 +129,7 @@ def process_article(model, article, processed_articles):
 
     return article_modified
 
-
 def process_xml_file(file_path: str, model) -> ET.Element:
-    """Process the entire XML file."""
     print(f"Processing XML file: {file_path}")
     parser = ET.XMLParser(encoding="utf-8")
     tree = ET.parse(file_path, parser=parser)
@@ -190,19 +145,9 @@ def process_xml_file(file_path: str, model) -> ET.Element:
     print(f"XML file has been processed successfully: {file_path}")
     return root
 
-
-def main():
-    """Main function to run the script."""
-    try:
-        configure_logging()
-        configure_api()
-        model = initialize_model()
-        process_xml_file(INPUT_FILE, model)
-        print("Processing completed successfully.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        print("The script will resume from the last checkpoint when restarted.")
-
-
 if __name__ == "__main__":
-    main()
+    # This block is for testing purposes only
+    from main import initialize_model, configure_logging
+    configure_logging()
+    model = initialize_model()
+    process_xml_file(INPUT_FILE, model)
