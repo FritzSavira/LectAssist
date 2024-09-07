@@ -2,10 +2,14 @@ import os
 import logging
 import google.generativeai as genai
 
+# Zentrale Definition der Dateipfade
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, 'DEPDBIBLEN-Content.xml')
 OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
 PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_DIR, 'process.log')
+FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
+CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, 'checkpoint.json')
+OUTPUT_FILE = os.path.join(OUTPUT_TXT_DIR, 'output.xml')
 
 def configure_logging():
     logging.basicConfig(
@@ -30,10 +34,8 @@ def initialize_model():
 def determine_processing_mode():
     # This function should be implemented to determine the processing mode
     # based on user input or command line arguments
-    #processing_mode = "text"
-    processing_mode = "xml"
+    processing_mode = "text"
     return processing_mode
-    pass
 
 def main():
     try:
@@ -45,10 +47,10 @@ def main():
 
         if processing_mode == 'text':
             from process_txt import process_text_files
-            process_text_files(model)
+            process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_DIR, FINISHED_DIR)
         elif processing_mode == 'xml':
             from process_xml import process_xml_file
-            process_xml_file(INPUT_FILE, model)
+            process_xml_file(INPUT_FILE, model, OUTPUT_TXT_DIR, FINISHED_DIR, CHECKPOINT_FILE, OUTPUT_FILE)
 
         print("Processing completed successfully.")
     except Exception as e:

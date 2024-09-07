@@ -6,12 +6,6 @@ import json
 import xml.etree.ElementTree as ET
 
 # Constants
-DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
-OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
-FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
-#INPUT_FILE = os.path.join(DIRECTORY_PATH, 'DEPDBIBLEN-Content.xml')
-OUTPUT_FILE = os.path.join(OUTPUT_TXT_DIR, 'output.xml')
-CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, 'checkpoint.json')
 MAX_RETRIES = 5
 BACKOFF_FACTOR = 0.3
 MIN_WORDS_PARAGRAPH = 5
@@ -57,19 +51,19 @@ def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
             print(f"An error occurred in generate_content(): {e}")
             return str(e)
 
-def load_checkpoint():
+def load_checkpoint(CHECKPOINT_FILE):
     if os.path.exists(CHECKPOINT_FILE):
         with open(CHECKPOINT_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
 
-def save_checkpoint(processed_articles):
+def save_checkpoint(CHECKPOINT_FILE, processed_articles):
     with open(CHECKPOINT_FILE, 'w', encoding='utf-8') as f:
         json.dump(processed_articles, f, ensure_ascii=False)
 
-def update_checkpoint(processed_articles, article_id):
+def update_checkpoint(CHECKPOINT_FILE, processed_articles, article_id):
     processed_articles[article_id] = True
-    save_checkpoint(processed_articles)
+    save_checkpoint(CHECKPOINT_FILE, processed_articles)
 
 def compare_xml_tags(content: str, response: str) -> bool:
     content_tags = re.findall(r'<[^>]+>', content)
@@ -102,7 +96,7 @@ def process_paragraph(model, p):
 
     return False, "Paragraph too short, skipped processing.", content_text, "N/A"
 
-def process_article(model, article, processed_articles):
+def process_article(model, article, processed_articles, checkpoint_file):
     article_id = article.get('id')
     if article_id in processed_articles:
         print(f"Skipping already processed article: {article_id}")
@@ -125,29 +119,29 @@ def process_article(model, article, processed_articles):
         logging.info(json.dumps(log_entry, ensure_ascii=False))
 
     if article_modified:
-        update_checkpoint(processed_articles, article_id)
+        update_checkpoint(checkpoint_file, processed_articles, article_id)
 
     return article_modified
 
-def process_xml_file(file_path: str, model) -> ET.Element:
+def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file) -> ET.Element:
     print(f"Processing XML file: {file_path}")
     parser = ET.XMLParser(encoding="utf-8")
     tree = ET.parse(file_path, parser=parser)
     root = tree.getroot()
 
-    processed_articles = load_checkpoint()
+    processed_articles = load_checkpoint(checkpoint_file)
 
     for article in root.findall('.//article'):
-        if process_article(model, article, processed_articles):
-            tree.write(OUTPUT_FILE, encoding='utf-8', xml_declaration=True)
-            print(f"XML file has been updated: {OUTPUT_FILE}")
+        if process_article(model, article, processed_articles, checkpoint_file):
+            tree.write(output_file, encoding='utf-8', xml_declaration=True)
+            print(f"XML file has been updated: {output_file}")
 
     print(f"XML file has been processed successfully: {file_path}")
     return root
 
 if __name__ == "__main__":
     # This block is for testing purposes only
-    from main import initialize_model, configure_logging
+    from main import initialize_model, configure_logging, INPUT_FILE, OUTPUT_TXT_DIR, FINISHED_DIR, CHECKPOINT_FILE, OUTPUT_FILE
     configure_logging()
     model = initialize_model()
-    process_xml_file(INPUT_FILE, model)
+    process_xml_file(INPUT_FILE, model, OUTPUT_TXT_DIR, FINISHED_DIR, CHECKPOINT_FILE, OUTPUT_FILE)

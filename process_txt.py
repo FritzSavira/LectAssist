@@ -7,11 +7,9 @@ from requests.exceptions import ConnectionError
 
 # Configuration variables
 WORDS_PER_CHUNK = 1500
-DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
-OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
-FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
 
-def setup_environment():
+
+def setup_environment(output_txt_dir, finished_dir):
     print("=== Initializing the environment ===")
     print(f"Number of words per section for processing: {WORDS_PER_CHUNK}")
 
@@ -20,8 +18,8 @@ def setup_environment():
     print("NLTK punkt tokenizer downloaded.")
 
     print("Checking output directories...")
-    os.makedirs(OUTPUT_TXT_DIR, exist_ok=True)
-    os.makedirs(FINISHED_DIR, exist_ok=True)
+    os.makedirs(output_txt_dir, exist_ok=True)
+    os.makedirs(finished_dir, exist_ok=True)
     print("Output directories checked/created.")
     print("=== Initialization completed ===\n")
 
@@ -76,9 +74,9 @@ def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_facto
                 print("Maximum number of attempts reached. Connection not possible.")
                 raise e
 
-def process_file(filename, model, prompt):
+def process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir):
     print(f"\n=== Processing file: {filename} ===")
-    file_path = os.path.join(DIRECTORY_PATH, filename)
+    file_path = os.path.join(directory_path, filename)
 
     print("Reading file content...")
     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -109,16 +107,16 @@ def process_file(filename, model, prompt):
     base_filename = os.path.splitext(filename)[0]
     full_response = f"## {base_filename}\n\n" + " ".join(responses)
 
-    md_filename = os.path.join(OUTPUT_TXT_DIR, f'{base_filename}_bearbeitet.md')
+    md_filename = os.path.join(output_txt_dir, f'{base_filename}_bearbeitet.md')
     save_as_md(full_response, md_filename)
 
-    print(f"Moving processed file to {FINISHED_DIR}...")
-    shutil.move(file_path, os.path.join(FINISHED_DIR, filename))
-    print(f"Processed file moved to {FINISHED_DIR}.")
+    print(f"Moving processed file to {finished_dir}...")
+    shutil.move(file_path, os.path.join(finished_dir, filename))
+    print(f"Processed file moved to {finished_dir}.")
     print(f"=== Processing of {filename} completed ===\n")
 
-def process_text_files(model):
-    setup_environment()
+def process_text_files(model, directory_path, output_txt_dir, finished_dir):
+    setup_environment(output_txt_dir, finished_dir)
 
     prompt = '''Du bist ein professioneller Lektor und lektorierst das hochgeladene Transkript einer frei gesprochenen
         Predigt. Deine Aufgabe ist es, das folgende Transkript in einen gut lesbaren Text zu überarbeiten,
@@ -148,13 +146,13 @@ def process_text_files(model):
         - Vermeide drei folgende Punkte "..." im Text.
         Hier beginnt der Text des Transkripts:'''
 
-    print(f"Searching for .txt files in {DIRECTORY_PATH}...")
-    valid_files = [f for f in os.listdir(DIRECTORY_PATH) if f.endswith('.txt')]
+    print(f"Searching for .txt files in {directory_path}...")
+    valid_files = [f for f in os.listdir(directory_path) if f.endswith('.txt')]
     print(f"{len(valid_files)} valid files found.")
 
     for i, filename in enumerate(valid_files):
         print(f"\nProcessing file {i + 1}/{len(valid_files)}: {filename}")
-        process_file(filename, model, prompt)
+        process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir)
 
     print("=== Script has processed all files ===")
 
