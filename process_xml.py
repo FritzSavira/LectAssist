@@ -6,8 +6,6 @@ import json
 import xml.etree.ElementTree as ET
 
 # Constants
-MAX_RETRIES = 5
-BACKOFF_FACTOR = 0.3
 MIN_WORDS_PARAGRAPH = 5
 
 def get_prompt():
@@ -33,15 +31,14 @@ def get_prompt():
 def get_text(element: ET.Element) -> str:
     return ''.join(element.itertext())
 
-def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
-    for attempt in range(MAX_RETRIES):
+def generate_content_with_retries(model, prompt: str, chunk: str, retries=5, backoff_factor=0.3 ) -> str:
+    for attempt in range(retries):
         try:
-            print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
-            response = model.generate_content(prompt + chunk)
-            return response.text
+            print(f"Attempting content generation (Attempt {attempt + 1}/{retries})...")
+            return model.generate_content(prompt + chunk)
         except ConnectionError as e:
-            if attempt < MAX_RETRIES - 1:
-                sleep_time = BACKOFF_FACTOR * (2 ** attempt)
+            if attempt < retries - 1:
+                sleep_time = backoff_factor * (2 ** attempt)
                 print(f"Connection error. Retrying in {sleep_time} seconds...")
                 time.sleep(sleep_time)
             else:
@@ -76,7 +73,7 @@ def process_paragraph(model, p):
     print(f"\nContent text: {content_text}")
 
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
-        response = generate_content_with_retries(model, get_prompt(), content)
+        response = generate_content_with_retries(model, get_prompt(), content).text
         response_text = re.sub(r'<[^>]+>', '', response)
         print(f"\nResponse text: {response_text}")
 

@@ -73,6 +73,9 @@ def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_facto
             else:
                 print("Maximum number of attempts reached. Connection not possible.")
                 raise e
+        except Exception as e:
+            print(f"An error occurred in generate_content(): {e}")
+            return str(e)
 
 def process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir):
     print(f"\n=== Processing file: {filename} ===")
