@@ -62,10 +62,7 @@ def update_checkpoint(CHECKPOINT_FILE, processed_articles, article_id):
     processed_articles[article_id] = True
     save_checkpoint(CHECKPOINT_FILE, processed_articles)
 
-def compare_xml_tags(content: str, response: str) -> bool:
-    content_tags = re.findall(r'<[^>]+>', content)
-    response_tags = re.findall(r'<[^>]+>', response)
-    return content_tags == response_tags
+
 
 def process_paragraph(model, p):
     content = ET.tostring(p, encoding='unicode', method='xml')
@@ -77,7 +74,10 @@ def process_paragraph(model, p):
         response_text = re.sub(r'<[^>]+>', '', response)
         print(f"\nResponse text: {response_text}")
 
-        tags_match = compare_xml_tags(content, response)
+        content_tags = re.findall(r'<[^>]+>', content)
+        response_tags = re.findall(r'<[^>]+>', response)
+        tags_match = content_tags == response_tags
+
         if tags_match:
             log_text = "XML tags in content and response are identical."
             print()
