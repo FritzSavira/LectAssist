@@ -2,18 +2,20 @@ import os
 import logging
 import google.generativeai as genai
 
+# Determine processing mode 'xml' or 'text'
+PROCESSING_MODE = 'xml'
+
+# Input filename
+INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
-INPUT_FILE = os.path.join(DIRECTORY_PATH, 'DEPDBIBLEN-Content.xml')
-OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
-PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_DIR, 'process.log')
-FINISHED_DIR = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
-CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, 'checkpoint.json')
-OUTPUT_FILE = os.path.join(OUTPUT_TXT_DIR, 'output.xml')
-
-# Determine processing mode 'xml' or 'text'
-PROCESSING_MODE = 'xml'
+FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
+OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
+INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
+CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
+OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.xml')
+PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_process.log')
 
 
 def configure_logging():
@@ -26,19 +28,19 @@ def configure_logging():
         encoding='utf-8'
     )
 
+
 def configure_api():
     """Configure the Google GenerativeAI API."""
     genai_api_key = os.getenv('GENAI_API_KEY')
     if not genai_api_key:
         raise ValueError("GENAI_API_KEY environment variable not set")
     genai.configure(api_key=genai_api_key)
-    print("API key configured successfully.")
+
 
 def initialize_model():
     """Initialize and return the GenerativeAI model."""
-    MODEL_NAME = 'gemini-1.5-pro'
-    return genai.GenerativeModel(MODEL_NAME)
-
+    model_name = 'gemini-1.5-pro'
+    return genai.GenerativeModel(model_name)
 
 
 def process_files(mode, model):
@@ -46,10 +48,11 @@ def process_files(mode, model):
     print(f"Processing mode: {mode}")
     if mode == 'text':
         from process_txt import process_text_files
-        process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_DIR, FINISHED_DIR)
+        process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml':
         from process_xml import process_xml_file
-        process_xml_file(INPUT_FILE, model, OUTPUT_TXT_DIR, FINISHED_DIR, CHECKPOINT_FILE, OUTPUT_FILE)
+        process_xml_file(INPUT_FILE, model, OUTPUT_TXT_PATH, FINISHED_PATH, CHECKPOINT_FILE, OUTPUT_FILE)
+
 
 def main():
     """Main function to run the script."""
@@ -60,6 +63,7 @@ def main():
 
         # Step 2: Configure API
         configure_api()
+        print("API key configured successfully.")
 
         # Step 3: Initialize the model
         model = initialize_model()
@@ -73,5 +77,7 @@ def main():
         print(f"An error occurred: {e}")
         print("The script will resume from the last checkpoint when restarted.")
 
+
 if __name__ == "__main__":
     main()
+
