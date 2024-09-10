@@ -1,5 +1,7 @@
 import os
 import time
+import logging
+import json
 import shutil
 import nltk
 from nltk.tokenize import sent_tokenize
@@ -23,6 +25,7 @@ def setup_environment(output_txt_dir, finished_dir):
     print("Output directories checked/created.")
     print("=== Initialization completed ===\n")
 
+
 def split_text(text, words_per_chunk):
     print(f"Splitting text into sections with {words_per_chunk} words each...")
     sentences = sent_tokenize(text)
@@ -43,6 +46,7 @@ def split_text(text, words_per_chunk):
     print(f"Text split into {len(chunks)} sections.")
     return chunks
 
+
 def save_as_md(text, filename):
     print(f"Saving Markdown file: {filename}")
     if not filename.endswith('.md'):
@@ -59,6 +63,7 @@ def save_as_md(text, filename):
     with open(new_filename, 'w', encoding='utf-8') as f:
         f.write(text)
     print(f"Response saved as Markdown file under: {new_filename}")
+
 
 def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_factor=0.3):
     for attempt in range(retries):
@@ -77,6 +82,7 @@ def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_facto
             print(f"An error occurred in generate_content(): {e}")
             return str(e)
 
+
 def process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir):
     print(f"\n=== Processing file: {filename} ===")
     file_path = os.path.join(directory_path, filename)
@@ -91,6 +97,7 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
 
     responses = []
     for i, chunk in enumerate(text_chunks):
+        error_message = ""
         print(f"Generating response for section {i + 1}/{len(text_chunks)}...")
         try:
             time.sleep(1)
@@ -106,6 +113,14 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
             error_message = f"!!! Error processing section {i + 1}: {e}"
             print(error_message)
             responses.append(error_message)
+        log_entry = {
+            "section": i + 1,
+            "status": "error" if error_message else "success",
+            "error_message": error_message,
+            "chunk": chunk,
+            "response": response,
+        }
+        logging.info(json.dumps(log_entry, ensure_ascii=False))
 
     base_filename = os.path.splitext(filename)[0]
     full_response = f"## {base_filename}\n\n" + " ".join(responses)
@@ -117,6 +132,7 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
     shutil.move(file_path, os.path.join(finished_dir, filename))
     print(f"Processed file moved to {finished_dir}.")
     print(f"=== Processing of {filename} completed ===\n")
+
 
 def process_text_files(model, directory_path, output_txt_dir, finished_dir):
     setup_environment(output_txt_dir, finished_dir)
@@ -158,6 +174,7 @@ def process_text_files(model, directory_path, output_txt_dir, finished_dir):
         process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir)
 
     print("=== Script has processed all files ===")
+
 
 if __name__ == "__main__":
     # This block is for testing purposes only
