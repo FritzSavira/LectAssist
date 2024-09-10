@@ -7,8 +7,14 @@ import xml.etree.ElementTree as ET
 
 # Constants
 MIN_WORDS_PARAGRAPH = 5
+MAX_RETRIES = 5
+BACKOFF_FACTOR = 0.3
 
 def get_prompt():
+    """
+    Returns the prompt for the AI model.
+    This prompt instructs the AI on how to process the text.
+    """
     return '''Du bist ein professioneller Lektor und lektorierst die hochgeladenen Textfragmente des
         Calwer Bibellexikons der Ausgabe von 1912.
         Verwende den Wortschatz des 21. Jahrhunderts.
@@ -29,16 +35,22 @@ def get_prompt():
           Hier beginnt das Textfragment der xml-Datei:'''
 
 def get_text(element: ET.Element) -> str:
+    """
+    Extracts all text from an XML element and its children.
+    """
     return ''.join(element.itertext())
 
-def generate_content_with_retries(model, prompt: str, chunk: str, retries=5, backoff_factor=0.3 ) -> str:
-    for attempt in range(retries):
+def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
+    """
+    Attempts to generate content using the AI model with retry mechanism.
+    """
+    for attempt in range(MAX_RETRIES):
         try:
-            print(f"Attempting content generation (Attempt {attempt + 1}/{retries})...")
-            return model.generate_content(prompt + chunk)
+            print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
+            return model.generate_content(prompt + chunk).text
         except ConnectionError as e:
-            if attempt < retries - 1:
-                sleep_time = backoff_factor * (2 ** attempt)
+            if attempt < MAX_RETRIES - 1:
+                sleep_time = BACKOFF_FACTOR * (2 ** attempt)
                 print(f"Connection error. Retrying in {sleep_time} seconds...")
                 time.sleep(sleep_time)
             else:
@@ -48,29 +60,39 @@ def generate_content_with_retries(model, prompt: str, chunk: str, retries=5, bac
             print(f"An error occurred in generate_content(): {e}")
             return str(e)
 
-def load_checkpoint(CHECKPOINT_FILE):
-    if os.path.exists(CHECKPOINT_FILE):
-        with open(CHECKPOINT_FILE, 'r', encoding='utf-8') as f:
+def load_checkpoint(checkpoint_file):
+    """
+    Loads the checkpoint file containing processed articles.
+    """
+    if os.path.exists(checkpoint_file):
+        with open(checkpoint_file, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
 
-def save_checkpoint(CHECKPOINT_FILE, processed_articles):
-    with open(CHECKPOINT_FILE, 'w', encoding='utf-8') as f:
+def save_checkpoint(checkpoint_file, processed_articles):
+    """
+    Saves the processed articles to the checkpoint file.
+    """
+    with open(checkpoint_file, 'w', encoding='utf-8') as f:
         json.dump(processed_articles, f, ensure_ascii=False)
 
-def update_checkpoint(CHECKPOINT_FILE, processed_articles, article_id):
+def update_checkpoint(checkpoint_file, processed_articles, article_id):
+    """
+    Updates the checkpoint file with a newly processed article.
+    """
     processed_articles[article_id] = True
-    save_checkpoint(CHECKPOINT_FILE, processed_articles)
-
-
+    save_checkpoint(checkpoint_file, processed_articles)
 
 def process_paragraph(model, p):
+    """
+    Processes a single paragraph using the AI model.
+    """
     content = ET.tostring(p, encoding='unicode', method='xml')
     content_text = get_text(p)
     print(f"\nContent text: {content_text}")
 
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
-        response = generate_content_with_retries(model, get_prompt(), content).text
+        response = generate_content_with_retries(model, get_prompt(), content)
         response_text = re.sub(r'<[^>]+>', '', response)
         print(f"\nResponse text: {response_text}")
 
@@ -80,7 +102,6 @@ def process_paragraph(model, p):
 
         if tags_match:
             log_text = "XML tags in content and response are identical."
-            print()
             print(log_text)
             p.clear()
             response_element = ET.fromstring(response)
@@ -94,6 +115,9 @@ def process_paragraph(model, p):
     return False, "Paragraph too short, skipped processing.", content_text, "N/A"
 
 def process_article(model, article, processed_articles, checkpoint_file):
+    """
+    Processes a single article, updating its paragraphs.
+    """
     article_id = article.get('id')
     if article_id in processed_articles:
         print(f"Skipping already processed article: {article_id}")
@@ -121,6 +145,10 @@ def process_article(model, article, processed_articles, checkpoint_file):
     return article_modified
 
 def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file) -> ET.Element:
+    """
+    Main function to process the XML file.
+    It iterates through all articles, processes them, and updates the file.
+    """
     print(f"Processing XML file: {file_path}")
     parser = ET.XMLParser(encoding="utf-8")
     tree = ET.parse(file_path, parser=parser)
