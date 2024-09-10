@@ -3,7 +3,7 @@ import logging
 import google.generativeai as genai
 
 # Determine processing mode 'xml' or 'text'
-PROCESSING_MODE = 'xml'
+PROCESSING_MODE = 'text'
 
 # Input filename
 INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'

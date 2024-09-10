@@ -118,7 +118,7 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
             "status": "error" if error_message else "success",
             "error_message": error_message,
             "chunk": chunk,
-            "response": response,
+            "response": response.text if hasattr(response, 'text') else str(response),
         }
         logging.info(json.dumps(log_entry, ensure_ascii=False))
 
