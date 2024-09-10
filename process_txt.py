@@ -137,33 +137,24 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
 def process_text_files(model, directory_path, output_txt_dir, finished_dir):
     setup_environment(output_txt_dir, finished_dir)
 
-    prompt = '''Du bist ein professioneller Lektor und lektorierst das hochgeladene Transkript einer frei gesprochenen
-        Predigt. Deine Aufgabe ist es, das folgende Transkript in einen gut lesbaren Text zu überarbeiten,
-        ohne formell zu werden. Folgende Schritte sind dabei zu beachten:
+    prompt = '''Du bist ein professioneller Lektor und lektorierst den hochgeladenen Abschnitt des Buches
+        Sovereign Grace von Dwight L. Moody. Deine Aufgabe ist es, den folgenden Text in einen gut lesbaren
+        Text zu überarbeiten.
+        Folgende Schritte sind dabei zu beachten:
 
         1. Textinhalt und Stil:
-        - Formuliere den Text in gut lesbares Schriftdeutsch um.
-        – Stelle Wörter im Satz um, wenn es die Regeln für Schriftdeutsch erfordern.
-        - Entferne Füllwörter und doppelte Aussagen, die direkt aufeinanderfolgen
-          (z.B. kommt es häufig vor, dass der Sprecher ein oder zwei Worte wiederholt).
-        - Die Bedeutung der Aussagen soll erhalten bleiben,
-          sprachliche Wiederholungen innerhalb eines Satzes dürfen gekürzt werden.
-        – Englische Ausdrücke (z.B. "crazy" oder "so goes it not") behalte bei.
+        - Formuliere den Text in gut lesbares Schriftenglisch um.
+        – Stelle Wörter im Satz um, wenn es die Regeln für Schriftenglisch erfordern.
+        - Die Bedeutung der Aussagen soll erhalten bleiben
         - Formuliere Sätze grammatikalisch korrekt. Vervollständige, wenn nötig, unvollständige Sätze.
 
         2. Formatierung:
-        - Formatiere Bibelstellen-Angaben ins Standard-Format (z.B. Römer 8 Vers 28 bis 31 soll Römer 8,28–31 heißen).
-        - Markiere verschiedene Sprecher mit SPK_1 und SPK_2 usw., wobei du bei erkennbaren Namen diese einfügst
-          (z.B. wenn SPK_1 einen Sprecher mit Namen anspricht, wird der nächste SPK wohl so heißen.
-          Du findest Sprecherangaben z.T. auch im Titel)
+        - Formatiere Bibelstellen-Angaben ins Standard-Format (z.B. Romans 8 vers 28 til 31 soll Romans 8,28–31 heißen).
         - Strukturiere den Text in Absätze, um ein lesefreundliches Layout zu gewährleisten.
-        – Achte auf eine richtige Kommasetzung vor "und".
         - Füge Zwischenüberschriften ein, die die Aussage des Absatzes zusammenfassen.
-          Verwende vor allem nominalisierte Phrasen. Jede Zeile mit Überschrift beginnt mit "###".
+          Verwende vor allem nominalisierte Phrasen.
           Nach maximal 15 Sätzen folgt ein Zeilenumbruch.
-        - Verwende das deutsche System von Anführungszeichen („ ").
-        - Vermeide drei folgende Punkte "..." im Text.
-        Hier beginnt der Text des Transkripts:'''
+        Hier beginnt der Text:'''
 
     print(f"Searching for .txt files in {directory_path}...")
     valid_files = [f for f in os.listdir(directory_path) if f.endswith('.txt')]
