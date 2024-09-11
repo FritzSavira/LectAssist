@@ -132,10 +132,11 @@ def process_article(model, article, processed_articles, checkpoint_file):
             article_modified = True
 
         log_entry = {
-            "article_id": article_id,
-            "log_text": log_text,
-            "content_text": content_text,
-            "response_text": response_text
+            "id": article_id,
+            "status": "success" if modified else "error",
+            "message": log_text,
+            "content": content_text,
+            "response": response_text
         }
         logging.info(json.dumps(log_entry, ensure_ascii=False))
 

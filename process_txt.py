@@ -2,13 +2,14 @@ import os
 import time
 import json
 import shutil
+import logging
 from datetime import datetime
 import nltk
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
 
 # Configuration variables
-WORDS_PER_CHUNK = 200
+WORDS_PER_CHUNK = 2000
 
 
 def setup_environment(output_txt_dir, finished_dir):
@@ -126,16 +127,17 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
 
         # Logging
         log_entry = {
-            "section": i + 1,
+            "id": i + 1,
             "status": "error" if error_message else "success",
-            "error_message": error_message,
-            "chunk": chunk,
+            "message": error_message,
+            "content": chunk,
             "response": response_text or str(response),
         }
-        log_string = json.dumps(log_entry, ensure_ascii=False)
-        with open(process_log_file, 'a', encoding='utf-8') as log_file:
-            timestamp = datetime.now().strftime('%d-%b-%y %H:%M:%S')
-            log_file.write(f"{timestamp} - {log_string}\n")
+        logging.info(json.dumps(log_entry, ensure_ascii=False))
+        #log_string = json.dumps(log_entry, ensure_ascii=False)
+        #with open(process_log_file, 'a', encoding='utf-8') as log_file:
+        #    timestamp = datetime.now().strftime('%d-%b-%y %H:%M:%S')
+        #    log_file.write(f"{timestamp} - {log_string}\n")
 
     base_filename = os.path.splitext(filename)[0]
     full_response = f"## {base_filename}\n\n" + " ".join(responses)

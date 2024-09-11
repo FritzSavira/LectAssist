@@ -6,7 +6,7 @@ import google.generativeai as genai
 PROCESSING_MODE = 'text'
 
 # Input filename
-INPUT_FILENAME = 'GesundeTheologie.txt'
+INPUT_FILENAME = 'Sovereign_grace_With_4_gospel_dialogues.txt'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
