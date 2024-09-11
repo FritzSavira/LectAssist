@@ -10,6 +10,7 @@ MIN_WORDS_PARAGRAPH = 5
 MAX_RETRIES = 5
 BACKOFF_FACTOR = 0.3
 
+
 def get_prompt():
     """
     Returns the prompt for the AI model.
@@ -34,11 +35,13 @@ def get_prompt():
         - Vermeide jeglichen weiteren Kommentar.
           Hier beginnt das Textfragment der xml-Datei:'''
 
+
 def get_text(element: ET.Element) -> str:
     """
     Extracts all text from an XML element and its children.
     """
     return ''.join(element.itertext())
+
 
 def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
     """
@@ -60,6 +63,7 @@ def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
             print(f"An error occurred in generate_content(): {e}")
             return str(e)
 
+
 def load_checkpoint(checkpoint_file):
     """
     Loads the checkpoint file containing processed articles.
@@ -69,6 +73,7 @@ def load_checkpoint(checkpoint_file):
             return json.load(f)
     return {}
 
+
 def save_checkpoint(checkpoint_file, processed_articles):
     """
     Saves the processed articles to the checkpoint file.
@@ -76,12 +81,14 @@ def save_checkpoint(checkpoint_file, processed_articles):
     with open(checkpoint_file, 'w', encoding='utf-8') as f:
         json.dump(processed_articles, f, ensure_ascii=False)
 
+
 def update_checkpoint(checkpoint_file, processed_articles, article_id):
     """
     Updates the checkpoint file with a newly processed article.
     """
     processed_articles[article_id] = True
     save_checkpoint(checkpoint_file, processed_articles)
+
 
 def process_paragraph(model, p):
     """
@@ -114,6 +121,7 @@ def process_paragraph(model, p):
 
     return False, "Paragraph too short, skipped processing.", content_text, "N/A"
 
+
 def process_article(model, article, processed_articles, checkpoint_file):
     """
     Processes a single article, updating its paragraphs.
@@ -145,6 +153,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
 
     return article_modified
 
+
 def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file) -> ET.Element:
     """
     Main function to process the XML file.
@@ -164,6 +173,7 @@ def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkp
 
     print(f"XML file has been processed successfully: {file_path}")
     return root
+
 
 if __name__ == "__main__":
     # This block is for testing purposes only

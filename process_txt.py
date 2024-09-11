@@ -3,7 +3,6 @@ import time
 import json
 import shutil
 import logging
-from datetime import datetime
 import nltk
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
@@ -84,7 +83,7 @@ def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_facto
             return str(e)
 
 
-def process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir, process_log_file):
+def process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir):
     print(f"\n=== Processing file: {filename} ===")
     file_path = os.path.join(directory_path, filename)
 
@@ -134,10 +133,6 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
             "response": response_text or str(response),
         }
         logging.info(json.dumps(log_entry, ensure_ascii=False))
-        #log_string = json.dumps(log_entry, ensure_ascii=False)
-        #with open(process_log_file, 'a', encoding='utf-8') as log_file:
-        #    timestamp = datetime.now().strftime('%d-%b-%y %H:%M:%S')
-        #    log_file.write(f"{timestamp} - {log_string}\n")
 
     base_filename = os.path.splitext(filename)[0]
     full_response = f"## {base_filename}\n\n" + " ".join(responses)
@@ -151,7 +146,7 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
     print(f"=== Processing of {filename} completed ===\n")
 
 
-def process_text_files(model, directory_path, output_txt_dir, finished_dir, process_log_file):
+def process_text_files(model, directory_path, output_txt_dir, finished_dir):
     setup_environment(output_txt_dir, finished_dir)
 
     prompt = '''You are a professional proofreader and are proofreading the uploaded section of the book
@@ -178,6 +173,6 @@ def process_text_files(model, directory_path, output_txt_dir, finished_dir, proc
 
     for i, filename in enumerate(valid_files):
         print(f"\nProcessing file {i + 1}/{len(valid_files)}: {filename}")
-        process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir, process_log_file)
+        process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir)
 
     print("=== Script has processed all files ===")
