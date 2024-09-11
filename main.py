@@ -6,7 +6,7 @@ import google.generativeai as genai
 PROCESSING_MODE = 'text'
 
 # Input filename
-INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
+INPUT_FILENAME = 'GesundeTheologie.txt'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
@@ -48,7 +48,7 @@ def process_files(mode, model):
     print(f"Processing mode: {mode}")
     if mode == 'text':
         from process_txt import process_text_files
-        process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
+        process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH, PROCESS_LOG_FILE)
     elif mode == 'xml':
         from process_xml import process_xml_file
         process_xml_file(INPUT_FILE, model, OUTPUT_TXT_PATH, FINISHED_PATH, CHECKPOINT_FILE, OUTPUT_FILE)
