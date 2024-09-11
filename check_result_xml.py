@@ -6,7 +6,7 @@ import re
 import os
 
 OUTPUT_TXT_DIR = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
-PROCESSED_LOG_FILE = os.path.join(OUTPUT_TXT_DIR, 'process.log')
+PROCESSED_LOG_FILE = os.path.join(OUTPUT_TXT_DIR, 'Sovereign_grace_With_4_gospel_dialogues_process.log')
 
 
 def highlight_word_differences(content_text, response_text):
@@ -148,9 +148,9 @@ def display_current_entry(content_text, response_text, status_var, article_id_la
         try:
             data = json.loads(json_str)
             content_text.delete(1.0, tk.END)
-            content_text.insert(tk.END, insert_line_breaks(data.get('content_text', '')))
+            content_text.insert(tk.END, insert_line_breaks(data.get('content', '')))
             response_text.delete(1.0, tk.END)
-            response_text.insert(tk.END, insert_line_breaks(data.get('response_text', '')))
+            response_text.insert(tk.END, insert_line_breaks(data.get('response', '')))
             status_var.set(data.get('Status', 'open'))
 
             # Display article_id
@@ -158,9 +158,9 @@ def display_current_entry(content_text, response_text, status_var, article_id_la
             #article_id_label.config(text=f"Article ID: {article_id}")
 
             # Display article_id and log_text
-            article_id = data.get('article_id', 'N/A')
-            log_text = data.get('log_text', 'No log text available')
-            article_id_label.config(text=f"Article ID: {article_id}\nLog Text: {log_text}")
+            article_id = data.get('id', 'N/A')
+            log_text = data.get('message', 'No log text available')
+            article_id_label.config(text=f"ID: {article_id}\nMessage: {log_text}")
 
             # Highlight word differences
             highlight_word_differences(content_text, response_text)
