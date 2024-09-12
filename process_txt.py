@@ -154,6 +154,7 @@ def process_text_files(model, directory_path, output_txt_dir, finished_dir):
         The following steps are to be observed:
 
         1. text content and style:
+        - Keep existing headlines 
         - Rephrase the text into easy-to-read written English.
         - Rearrange words in the sentence if required by the rules for written English.
         - The meaning of the statements should be retained
