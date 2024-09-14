@@ -103,18 +103,21 @@ class LogViewer:
         return ''.join(marked_text1), ''.join(marked_text2)
 
     def tokenize_with_whitespace(self, text):
-        # Tokenisiere den Text, behalte aber Whitespace und Satzzeichen bei
-        tokens = []
         words = word_tokenize(text)
+        tokens = []
         last_end = 0
         for word in words:
-            start = text.index(word, last_end)
-            if start > last_end:
-                tokens.append(text[last_end:start])
-            tokens.append(word)
-            last_end = start + len(word)
-        if last_end < len(text):
-            tokens.append(text[last_end:])
+            try:
+                start = text.index(word, last_end)
+                end = start + len(word)
+                if start > last_end:
+                    tokens.append((' ' * (start - last_end)))
+                tokens.append((word))
+                last_end = end
+            except ValueError:
+                # Wenn das Wort nicht gefunden wird, fügen Sie es einfach hinzu
+                tokens.append((word))
+                last_end += len(word)
         return tokens
 
     def insert_colored_text(self, text_widget, text, color):
