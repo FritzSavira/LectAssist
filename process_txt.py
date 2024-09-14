@@ -149,24 +149,22 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
 def process_text_files(model, directory_path, output_txt_dir, finished_dir):
     setup_environment(output_txt_dir, finished_dir)
 
-    prompt = '''You are a professional proofreader and are proofreading the uploaded section of the book
-        Sovereign Grace by Dwight L. Moody. Your task is to edit the following text into a readable text.
-        The following steps are to be observed:
+    prompt = '''Du bist ein professioneller Übersetzer und übersetzt christliche Bücher aus
+        der englischen in die deutsche Sprache.
+        Deine Aufgabe ist es, den folgenden Abschnitt des Buches Sovereign Grace von Dwight L. Moody
+        in die deutsche Sprache zu übersetzen.
 
-        1. text content and style:
-        - Keep existing headlines 
-        - Rephrase the text into easy-to-read written English.
-        - Rearrange words in the sentence if required by the rules for written English.
-        - The meaning of the statements should be retained
-        - Formulate sentences grammatically correctly. Complete incomplete sentences if necessary.
+        1. Textinhalt und Stil:       
+        - Übersetze sehr nah am englischen Text.
+        - Der Ausdruck und sprachliche Stil des ursprünglichen Textes muss erhalten bleiben.
+        - Die ursprüngliche semantische Bedeutung der Aussagen muss erhalten bleiben.
 
-        2. formatting:
-        - Format scripture references into standard format (e.g. Romans 8 verses 28 til 31 should read Romans 8:28-31).
-        - Structure the text into paragraphs to ensure a reader-friendly layout.
-        - Insert subheadings that summarize the message of the paragraph.
-          Use mainly nominalized phrases.
-          A line break follows after a maximum of 15 sentences.
-        This is where the text begins:'''
+
+        2. Formatierung:
+        - Formatiere Bibelstellen-Angaben ins Standard-Format (z.B. Römer 8 Vers 28 bis 31 soll Römer 8,28–31 heißen).
+        - Vorhandene Überschriften bleiben erhalten. 
+        - Strukturiere den Text in Absätze, um ein lesefreundliches Layout zu gewährleisten.
+        Hier beginnt der Text:'''
 
     print(f"Searching for .txt files in {directory_path}...")
     valid_files = [f for f in os.listdir(directory_path) if f.endswith('.txt')]

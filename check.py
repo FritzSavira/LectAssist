@@ -1,8 +1,13 @@
 import tkinter as tk
 from tkinter import filedialog, scrolledtext
 import json
+import nltk
+from nltk.tokenize import word_tokenize
 import difflib
+import re
 
+# Downloaden Sie das notwendige NLTK-Paket (nur einmal notwendig)
+nltk.download('punkt')
 
 class LogViewer:
     def __init__(self, master):
@@ -70,35 +75,57 @@ class LogViewer:
 
             self.left_text.delete('1.0', tk.END)
             self.right_text.delete('1.0', tk.END)
-            self.left_text.insert(tk.END, record['content'])
-            self.right_text.insert(tk.END, record['response'])
 
-            self.highlight_differences()
+            marked_content, marked_response = self.compare_texts(record['content'], record['response'])
 
-    def highlight_differences(self):
-        left_words = self.left_text.get('1.0', tk.END).split()
-        right_words = self.right_text.get('1.0', tk.END).split()
+            self.insert_colored_text(self.left_text, marked_content, 'red')
+            self.insert_colored_text(self.right_text, marked_response, 'green')
 
-        differ = difflib.Differ()
-        diff = list(differ.compare(left_words, right_words))
+    def compare_texts(self, text1, text2):
+        tokens1 = self.tokenize_with_whitespace(text1)
+        tokens2 = self.tokenize_with_whitespace(text2)
 
-        self.left_text.tag_remove('red', '1.0', tk.END)
-        self.right_text.tag_remove('green', '1.0', tk.END)
+        d = difflib.Differ()
+        diff = list(d.compare(tokens1, tokens2))
 
-        left_index = right_index = 1
-        for word in diff:
-            if word.startswith('- '):
-                self.left_text.tag_add('red', f'{left_index}.0', f'{left_index}.{len(word) - 2}')
-                left_index += 1
-            elif word.startswith('+ '):
-                self.right_text.tag_add('green', f'{right_index}.0', f'{right_index}.{len(word) - 2}')
-                right_index += 1
+        marked_text1 = []
+        marked_text2 = []
+
+        for token in diff:
+            if token.startswith('  '):
+                marked_text1.append(token[2:])
+                marked_text2.append(token[2:])
+            elif token.startswith('- '):
+                marked_text1.append(f"[{token[2:]}]")
+            elif token.startswith('+ '):
+                marked_text2.append(f"[{token[2:]}]")
+
+        return ''.join(marked_text1), ''.join(marked_text2)
+
+    def tokenize_with_whitespace(self, text):
+        # Tokenisiere den Text, behalte aber Whitespace und Satzzeichen bei
+        tokens = []
+        words = word_tokenize(text)
+        last_end = 0
+        for word in words:
+            start = text.index(word, last_end)
+            if start > last_end:
+                tokens.append(text[last_end:start])
+            tokens.append(word)
+            last_end = start + len(word)
+        if last_end < len(text):
+            tokens.append(text[last_end:])
+        return tokens
+
+    def insert_colored_text(self, text_widget, text, color):
+        parts = re.split(r'(\[.*?\])', text)
+        for part in parts:
+            if part.startswith('[') and part.endswith(']'):
+                text_widget.insert(tk.END, part[1:-1], color)
             else:
-                left_index += 1
-                right_index += 1
-
-        self.left_text.tag_config('red', foreground='red')
-        self.right_text.tag_config('green', foreground='green')
+                text_widget.insert(tk.END, part)
+        text_widget.tag_configure('red', foreground='red')
+        text_widget.tag_configure('green', foreground='green')
 
     def prev_record(self):
         if self.current_index > 0:
@@ -127,7 +154,6 @@ class LogViewer:
     def on_scroll(self, *args):
         self.left_text.yview_moveto(args[1])
         self.right_text.yview_moveto(args[1])
-
 
 if __name__ == "__main__":
     root = tk.Tk()
