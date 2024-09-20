@@ -25,18 +25,14 @@ def get_prompt():
         - Beachte, dass es sich um ein Lexikon handelt.
         - Schreibe den Namen des lexikalischen Artikels im Text aus(keine Abkürzung).
         - Ersetze Abkürzungen durch Klartext.
-        
-
+    
         2. Formatierung:
         - Die Textfragmente enthalten xml-Tags. Diese Tags müssen an der selben Stelle
           im ursprünglichen Textfragment erhalten bleiben.
         - Die xml-Tags dürfen nicht verändert werden.
-        - Gliedere Artikel, die mehrere inhaltliche Punkte behandeln durch Absätze, um eine gute Lesbarkeit zu erhalten.
-          Markiere den Beginne eines Absatzes mit ~SP~.
-          Markiere das Ende eines Absatzes mit ~EP~.
-        - Finde geeignete Überschriften für die Absätze.
-          Markiere den Beginn einer Überschrift mit ~SH~.
-          Markiere das Ende einer Überschrift mit ~EH~.
+        - Gliedere Artikel, in Absätze, um verschiedene inhaltliche Punkte voneinander zu unterscheiden.
+          Markiere den Beginn eines von dir eingefügten Absatzes mit einem Zeilenumbruch und ***Start Absatz***.
+          Markiere das Ende eines von dir eingefügten Absatzes mit ***Ende Absatz***.
 
         3. Ausgabe:
         - Gib ausschließlich das bearbeitete Textfragment inclusive der ursprünglichen xml-Tags zurück.
@@ -104,25 +100,46 @@ def process_paragraph(model, p):
     """
     content = ET.tostring(p, encoding='unicode', method='xml')
     content_text = get_text(p)
+    print("content: ", content)
     print(f"\nContent text: {content_text}")
 
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
         response = generate_content_with_retries(model, get_prompt(), content)
-        response_text = re.sub(r'<[^>]+>', '', response)
-        print(f"\nResponse text: {response_text}")
+        print()
+        print("response direkt aus KI: ", response)
 
         content_tags = re.findall(r'<[^>]+>', content)
         response_tags = re.findall(r'<[^>]+>', response)
         tags_match = content_tags == response_tags
 
         if tags_match:
+            # Perform the requested string replacements
+            response = response.replace("***Start Absatz***", "<p>")
+            response = response.replace("***Ende Absatz***", "</p>")
+            #response = response.replace("~SH~", '<p field="heading" class="head2">')
+            #response = response.replace("~EH~", "</p>")
+
+            response_text = re.sub(r'<[^>]+>', '', response)
+            print(f"\nResponse text: {response_text}")
+
             log_text = "XML tags in content and response are identical."
             print(log_text)
-            p.clear()
-            response_element = ET.fromstring(response)
-            p.append(response_element)
-            return True, log_text, content_text, response_text
+
+            try:
+                p.clear()
+                print("response: ", response)
+                response_element = ET.fromstring(response)
+                p.append(response_element)
+                return True, log_text, content_text, response_text
+
+            except Exception as e:
+                log_text = f"An error occurred in process_paragraph(): {e}"
+                print(log_text)
+                return False, log_text, content_text, response_text
+
         else:
+            response_text = re.sub(r'<[^>]+>', '', response)
+            print(f"\nResponse text: {response_text}")
             log_text = "Warning: XML tags in content and response do not match. Keeping original content."
             print(log_text)
             return False, log_text, content_text, response_text
