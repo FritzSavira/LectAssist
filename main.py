@@ -3,10 +3,13 @@ import logging
 import google.generativeai as genai
 
 # Determine processing mode 'xml' or 'text'
-PROCESSING_MODE = 'text'
+PROCESSING_MODE = 'xml'
+
+# Determine AI provider
+PROVIDER ='google'
 
 # Input filename
-INPUT_FILENAME = 'Sovereign_grace_With_4_gospel_dialogues_bearbeitet.txt'
+INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
@@ -30,18 +33,22 @@ def configure_logging():
 
 
 def configure_api():
-    """Configure the Google GenerativeAI API."""
-    genai_api_key = os.getenv('GENAI_API_KEY')
-    if not genai_api_key:
-        raise ValueError("GENAI_API_KEY environment variable not set")
-    genai.configure(api_key=genai_api_key)
-
+    if PROVIDER == 'google':
+        """Configure the Google GenerativeAI API."""
+        genai_api_key = os.getenv('GENAI_API_KEY')
+        if not genai_api_key:
+            raise ValueError("GENAI_API_KEY environment variable not set")
+        genai.configure(api_key=genai_api_key)
+    else:
+        pass
 
 def initialize_model():
-    """Initialize and return the GenerativeAI model."""
-    model_name = 'gemini-1.5-pro'
-    return genai.GenerativeModel(model_name)
-
+    if PROVIDER == 'google':
+        """Initialize and return the GenerativeAI model."""
+        model_name = 'gemini-1.5-pro'
+        return genai.GenerativeModel(model_name)
+    else:
+        pass
 
 def process_files(mode, model):
     """Process files based on the selected mode."""
