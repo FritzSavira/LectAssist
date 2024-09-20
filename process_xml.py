@@ -100,13 +100,15 @@ def process_paragraph(model, p):
     """
     content = ET.tostring(p, encoding='unicode', method='xml')
     content_text = get_text(p)
-    print("content: ", content)
-    print(f"\nContent text: {content_text}")
+    # print commands for debugging purpose only.
+    # print("content: ", content)
+    # print(f"\nContent text: {content_text}")
 
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
         response = generate_content_with_retries(model, get_prompt(), content)
-        print()
-        print("response direkt aus KI: ", response)
+        # print commands for debugging purpose only.
+        # print()
+        # print("response direkt aus KI: ", response)
 
         content_tags = re.findall(r'<[^>]+>', content)
         response_tags = re.findall(r'<[^>]+>', response)
@@ -120,31 +122,39 @@ def process_paragraph(model, p):
             #response = response.replace("~EH~", "</p>")
 
             response_text = re.sub(r'<[^>]+>', '', response)
-            print(f"\nResponse text: {response_text}")
+            # print commands for debugging purpose only.
+            # print(f"\nResponse text: {response_text}")
 
             log_text = "XML tags in content and response are identical."
             print(log_text)
 
             try:
                 p.clear()
-                print("response: ", response)
+                # print commands for debugging purpose only.
+                # print("response: ", response)
                 response_element = ET.fromstring(response)
                 p.append(response_element)
                 return True, log_text, content_text, response_text
 
             except Exception as e:
-                log_text = f"An error occurred in process_paragraph(): {e}"
+                # Write original content back in xml-file
+                response_element = ET.fromstring(content)
+                p.append(response_element)
+                log_text = f"An error occurred in process_paragraph(): {e} Keeping original content."
                 print(log_text)
                 return False, log_text, content_text, response_text
 
         else:
             response_text = re.sub(r'<[^>]+>', '', response)
-            print(f"\nResponse text: {response_text}")
+            # print commands for debugging purpose only.
+            # print(f"\nResponse text: {response_text}")
             log_text = "Warning: XML tags in content and response do not match. Keeping original content."
             print(log_text)
             return False, log_text, content_text, response_text
-
-    return False, "Paragraph too short, skipped processing.", content_text, "N/A"
+    else:
+        log_text = "Paragraph too short, skipped processing."
+        print(log_text)
+    return False, log_text, content_text, "N/A"
 
 
 def process_article(model, article, processed_articles, checkpoint_file):
