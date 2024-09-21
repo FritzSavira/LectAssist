@@ -9,7 +9,7 @@ PROCESSING_MODE = 'xml'
 PROVIDER ='google'
 
 # Input filename
-INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
+INPUT_FILENAME = 'CalwerFULL.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'

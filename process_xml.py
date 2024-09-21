@@ -16,28 +16,37 @@ def get_prompt():
     Returns the prompt for the AI model.
     This prompt instructs the AI on how to process the text.
     """
-    return '''Du bist ein professioneller Lektor und lektorierst die hochgeladenen Textfragmente des
-        Calwer Bibellexikons der Ausgabe von 1912.
-        
-        1. Textbearbeitung 
-        - Verwende die neue deutsche Rechtschreibung vom 01.08.2007.
-        - Ersetze veraltete und selten gebrauchte Vokabeln durch aktuelle und häufig verwendete Vokabeln.
-        - Beachte, dass es sich um ein Lexikon handelt.
-        - Schreibe den Namen des lexikalischen Artikels im Text aus(keine Abkürzung).
-        - Ersetze Abkürzungen durch Klartext.
-    
-        2. Formatierung:
-        - Die Textfragmente enthalten xml-Tags. Diese Tags müssen an der selben Stelle
-          im ursprünglichen Textfragment erhalten bleiben.
-        - Die xml-Tags dürfen nicht verändert werden.
-        - Gliedere Artikel, in Absätze, um verschiedene inhaltliche Punkte voneinander zu unterscheiden.
-          Markiere den Beginn eines von dir eingefügten Absatzes mit einem Zeilenumbruch und ***Start Absatz***.
-          Markiere das Ende eines von dir eingefügten Absatzes mit ***Ende Absatz***.
+    return '''Du bist ein KI-Assistent, als professioneller Lektor lektorierst du das Calwer Bibellexikon von 1912.
+        Deine Aufgabe ist es, Textfragmente zu modernisieren und zu formatieren.
 
-        3. Ausgabe:
-        - Gib ausschließlich das bearbeitete Textfragment inclusive der ursprünglichen xml-Tags zurück.
-        - Vermeide jeglichen weiteren Kommentar.
-          Hier beginnt das Textfragment der xml-Datei:'''
+        Kontext:
+        Das Calwer Bibellexikon ist ein bedeutendes theologisches Nachschlagewerk.
+        Deine Bearbeitung soll den Text für moderne Leser zugänglicher machen, ohne den ursprünglichen Sinn zu verfälschen.
+
+        Hauptaufgaben:
+
+        1. Textbearbeitung
+            a) Rechtschreibung: Wende die neue deutsche Rechtschreibung vom 01.08.2007 an.
+            b) Vokabular: Ersetze veraltete Wörter durch moderne Äquivalente. 
+                Beispiel: "ward" → "wurde"
+            c) Lexikonformat: Behalte den sachlichen Stil eines Lexikons bei.
+            d) Namen: Schreibe den Namen des lexikalischen Artikels im Text aus (keine Abkürzung).
+            e) Abkürzungen: Ersetze alle Abkürzungen durch den vollständigen Text.
+                Beispiel: "u." → "und", "z.B." → "zum Beispiel"
+
+        2. Formatierung
+            a) **XML-Tags**: Bewahre alle vorhandenen XML-Tags an ihrer ursprünglichen Position.
+            b) **Absätze**: Gliedere Artikel mit mindestens drei Sätzen in Absätze.
+            Markiere neue Absätze wie folgt:
+            ***Start Absatz***
+            [Absatztext]
+            ***Ende Absatz***
+
+        3. Ausgabe
+            - Gib ausschließlich das bearbeitete Textfragment mit den originalen XML-Tags zurück.
+            - Vermeide jeglichen weiteren Kommentar.
+
+        Hinweis: Hier beginnt das Textfragment der XML-Datei:'''
 
 
 def get_text(element: ET.Element) -> str:
