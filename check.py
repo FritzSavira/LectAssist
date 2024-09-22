@@ -6,7 +6,6 @@ from nltk.tokenize import word_tokenize
 import difflib
 import re
 
-# Downloaden Sie das notwendige NLTK-Paket (nur einmal notwendig)
 nltk.download('punkt')
 
 class LogViewer:
@@ -21,6 +20,15 @@ class LogViewer:
         self.load_file()
 
     def create_widgets(self):
+        # ID Input Field
+        self.id_input_frame = tk.Frame(self.master)
+        self.id_input_frame.pack(fill=tk.X)
+        self.id_input_label = tk.Label(self.id_input_frame, text="Enter ID:")
+        self.id_input_label.pack(side=tk.LEFT)
+        self.id_input = tk.Entry(self.id_input_frame)
+        self.id_input.pack(side=tk.LEFT, expand=True, fill=tk.X)
+        self.id_input.bind('<Return>', self.search_id)
+
         # Info labels
         self.info_frame = tk.Frame(self.master)
         self.info_frame.pack(fill=tk.X)
@@ -58,6 +66,10 @@ class LogViewer:
         self.save_button = tk.Button(self.button_frame, text="Save", command=self.save_record)
         self.save_button.pack()
 
+        # Error message label
+        self.error_label = tk.Label(self.master, text="", fg="red")
+        self.error_label.pack(side=tk.BOTTOM, fill=tk.X)
+
     def load_file(self):
         self.file_path = filedialog.askopenfilename(filetypes=[("Log files", "*.log")])
         if self.file_path:
@@ -65,6 +77,16 @@ class LogViewer:
                 content = file.read()
                 self.records = [json.loads(line.split(' - ', 1)[1]) for line in content.strip().split('\n')]
             self.display_record()
+
+    def search_id(self, event):
+        search_id = self.id_input.get()
+        for i, record in enumerate(self.records):
+            if record['id'] == search_id:
+                self.current_index = i
+                self.display_record()
+                self.error_label.config(text="")
+                return
+        self.error_label.config(text="Keine übereinstimmende ID gefunden.")
 
     def display_record(self):
         if self.records:
