@@ -217,11 +217,3 @@ def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkp
 
     print(f"XML file has been processed successfully: {file_path}")
     return root
-
-
-if __name__ == "__main__":
-    # This block is for testing purposes only
-    from main import initialize_model, configure_logging, INPUT_FILE, OUTPUT_TXT_DIR, FINISHED_DIR, CHECKPOINT_FILE, OUTPUT_FILE
-    configure_logging()
-    model = initialize_model()
-    process_xml_file(INPUT_FILE, model, OUTPUT_TXT_DIR, FINISHED_DIR, CHECKPOINT_FILE, OUTPUT_FILE)

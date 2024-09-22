@@ -33,12 +33,28 @@ def create_dataframe(data):
     df['message_short'] = df['message'].apply(extract_message_short)
     df['message_short'] = df['message_short'].str.encode('ascii', errors='ignore').str.decode('ascii')
     df['id-content'] = df['id'] + ' ' + df['content'].str[:50]
+    df['id-content-message'] = df['id-content'] + ' ' + df['message_short']
+
+    # Convert timestamp to datetime
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+    # Sort the dataframe by 'id-content' and 'timestamp'
+    df = df.sort_values(['id-content', 'timestamp'])
+
+    # Create the 'latest' column
+    df['latest'] = df.groupby('id-content')['timestamp'].transform('max') == df['timestamp']
+
     return df
 
 
 def filter_dataframe(df, excluded_status, excluded_messages):
-    """Filter DataFrame based on excluded status and messages."""
-    return df[~df['status'].isin(excluded_status) & ~df['message'].isin(excluded_messages)]
+    """Filter DataFrame based on excluded status, messages, and latest flag."""
+    return df[
+        (~df['status'].isin(excluded_status)) &
+        (~df['message'].isin(excluded_messages)) &
+        (df['latest'] == True)
+    ]
+
 
 
 def analyze_message_short(df):
@@ -50,13 +66,20 @@ def analyze_message_short(df):
 
 def analyze_id_content(df):
     """Analyze and print id-content statistics."""
-    id_content_counts = df['id-content'].value_counts()
+    id_content_counts = df['id-content-message'].value_counts()
     id_content_freq = id_content_counts.reset_index()
-    id_content_freq.columns = ['id-content', 'Frequency']
-    id_content_freq_filtered = id_content_freq[id_content_freq['Frequency'] > 1]
+    id_content_freq.columns = ['id-content-message', 'Frequency']
+    #id_content_freq_filtered = id_content_freq[id_content_freq['Frequency'] > 1]
 
-    print("\nFrequency of 'id-content' values (only Frequency > 1):")
-    print(id_content_freq_filtered.to_string(index=False))
+    # Sort the DataFrame by 'Frequency' (descending) and then by 'id-content-message'
+    id_content_freq_sorted = id_content_freq.sort_values(
+        by=['id-content-message'],
+        ascending=[True]
+    )
+
+    print("\n'id-content-message':")
+    print(id_content_freq_sorted.to_string(index=False))
+
 
 
 def analyze_frequency_distribution(df):
@@ -117,6 +140,7 @@ def main():
 
             unique_count = df['id-content'].nunique()
             print(f"\nNumber of unique datasets (id-content): {unique_count}")
+
 
             excluded_status = ['success']
             excluded_messages = ['Paragraph too short, skipped processing.']

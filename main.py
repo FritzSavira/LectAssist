@@ -13,8 +13,8 @@ INPUT_FILENAME = 'CalwerFULL.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
-FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt'
-OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt'
+FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
+OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 CHECKPOINT_FILE = os.path.join(DIRECTORY_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
 OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.xml')
