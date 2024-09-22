@@ -1,196 +1,135 @@
 import pandas as pd
 import json
 import os
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-from tabulate import tabulate
+import sys
+from datetime import datetime
 
-INPUT_FILENAME = 'CalwerFULL_process.log'
+def load_data(file_path):
+    """Load data from log file and return a list of parsed entries."""
+    data = []
+    with open(file_path, 'r', encoding='utf-8') as file:
+        for line in file:
+            line = line.strip()
+            if line:
+                try:
+                    timestamp, json_text = line.split(' - ', 1)
+                    entry = json.loads(json_text)
+                    entry['timestamp'] = timestamp
+                    data.append(entry)
+                except (ValueError, json.JSONDecodeError) as e:
+                    print(f"Error processing line: {line}\n{e}")
+    return data
 
-# Dateipfade
-DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
-INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
-# Name und Pfad der PDF-Datei
-PDF_FILENAME = 'CalwerFull_LogReport.pdf'
-PDF_FILEPATH = os.path.join(DIRECTORY_PATH, PDF_FILENAME)
 
-# Liste zur Speicherung der Datensätze
-daten = []
-
-# Öffne die Logdatei und lese sie zeilenweise ein
-with open(INPUT_FILE, 'r', encoding='utf-8') as datei:
-    for zeile in datei:
-        # Entferne führende und folgende Leerzeichen
-        zeile = zeile.strip()
-        # Prüfe, ob die Zeile nicht leer ist
-        if zeile:
-            try:
-                # Teile die Zeile in Timestamp und JSON auf
-                timestamp, json_text = zeile.split(' - ', 1)
-                # Lade den JSON-Text in ein Dictionary
-                eintrag = json.loads(json_text)
-                # Füge den Timestamp zum Dictionary hinzu
-                eintrag['timestamp'] = timestamp
-                # Füge den Eintrag der Datenliste hinzu
-                daten.append(eintrag)
-            except ValueError as ve:
-                print(f"Fehler beim Verarbeiten der Zeile: {zeile}\n{ve}")
-            except json.JSONDecodeError as je:
-                print(f"Fehler beim Parsen des JSON: {zeile}\n{je}")
-
-# Erstelle ein Pandas DataFrame aus der Datenliste
-df = pd.DataFrame(daten)
-
-# **Neue Spalte "message_short" erstellen**
 def extract_message_short(message):
-    # Finde die Positionen aller Doppelpunkte
-    indices = [pos for pos, char in enumerate(message) if char == ':']
-    if len(indices) >= 2:
-        # Gibt den String bis einschließlich des zweiten Doppelpunkts zurück
-        return message[:indices[1]+1]
-    else:
-        # Weniger als zwei Doppelpunkte gefunden, gesamte Nachricht zurückgeben
-        return message
-
-df['message_short'] = df['message'].apply(extract_message_short)
-
-# **Neue Spalte "id-content" erstellen**
-# Die Spalte enthält den Wert aus "id" und die ersten 50 Zeichen aus "content"
-df['id-content'] = df['id'] + ' ' + df['content'].str[:50]
-
-# Anzahl der individuellen Datensätze
-anzahl_individuelle_datensaetze = df['id-content'].nunique()
-print(f"\nAnzahl der individuellen Datensätze (id-content): {anzahl_individuelle_datensaetze}")
+    """Extract short message from full message."""
+    colon_indices = [pos for pos, char in enumerate(message) if char == ':']
+    return message[:colon_indices[1] + 1] if len(colon_indices) >= 2 else message
 
 
-# Definiere die Werte, die ausgeschlossen werden sollen
-ausgeschlossene_status = ['success']  # Beispiel: Status 'success' ausschließen
-ausgeschlossene_messages = [
-    'Paragraph too short, skipped processing.',
-]  # Beispiel: Bestimmte Messages ausschließen
-
-# Filtere das DataFrame, um die auszuschließenden Werte zu entfernen
-df_gefiltert = df[~df['status'].isin(ausgeschlossene_status)]
-df_gefiltert = df_gefiltert[~df_gefiltert['message'].isin(ausgeschlossene_messages)]
-
-# Statistische Auswertung der gefilterten Spalte "message_short"
-message_short_counts = df_gefiltert['message_short'].value_counts()
-print("\nAnzahl der Einträge pro Message Short (gefiltert):")
-print(message_short_counts)
-
-# Optional: Darstellung der häufigsten Message Shorts (gefiltert)
-top_n = 10  # Anzahl der anzuzeigenden Message Shorts
-top_messages_short = message_short_counts.head(top_n)
-
-# Erstelle ein Balkendiagramm für die häufigsten Message Shorts (gefiltert)
-plt.figure(figsize=(12, 8))
-top_messages_short.plot(kind='bar', color='coral')
-plt.title(f'Häufigste Message Shorts (Top {top_n}, gefiltert)')
-plt.xlabel('Message Short')
-plt.ylabel('Anzahl')
-plt.xticks(rotation=45, ha='right')
-plt.grid(axis='y', linestyle='--', alpha=0.7)
-plt.tight_layout()
-plt.show()
+def create_dataframe(data):
+    """Create and preprocess DataFrame from loaded data."""
+    df = pd.DataFrame(data)
+    df['message_short'] = df['message'].apply(extract_message_short)
+    df['message_short'] = df['message_short'].str.encode('ascii', errors='ignore').str.decode('ascii')
+    df['id-content'] = df['id'] + ' ' + df['content'].str[:50]
+    return df
 
 
-# **Statistische Auswertung der Spalte "id-content"**
-# Zähle die Häufigkeit jedes "id-content"-Wertes
-id_content_counts = df_gefiltert['id-content'].value_counts()
-
-# Erstelle ein DataFrame mit den Häufigkeiten
-id_content_häufigkeit = id_content_counts.reset_index()
-id_content_häufigkeit.columns = ['id-content', 'Häufigkeit']
-
-# Filtere Datensätze mit Häufigkeit > 1
-id_content_häufigkeit_gefiltert = id_content_häufigkeit[id_content_häufigkeit['Häufigkeit'] > 1]
-
-# Ausgabe der gefilterten Häufigkeitstabelle
-print("\nHäufigkeit der 'id-content'-Werte (nur Häufigkeit > 1):")
-print(id_content_häufigkeit_gefiltert.to_string(index=False))
-
-# **Darstellung der Häufigkeitsverteilung**
-# Zähle, wie viele "id-content"-Werte 1-mal, 2-mal, 3-mal etc. vorkommen
-häufigkeit_verteilung = id_content_häufigkeit['Häufigkeit'].value_counts().sort_index()
-
-# Ausgabe der Verteilung
-print("\nVerteilung der Häufigkeiten von 'id-content':")
-print(häufigkeit_verteilung.to_string())
-
-# Erstelle ein Balkendiagramm der Häufigkeitsverteilung
-plt.figure(figsize=(8,6))
-häufigkeit_verteilung.plot(kind='bar', color='skyblue')
-plt.title("Anzahl der 'id-content'-Werte nach Häufigkeit")
-plt.xlabel("Anzahl der Vorkommen eines 'id-content'-Wertes")
-plt.ylabel("Anzahl der verschiedenen 'id-content'-Werte")
-plt.grid(axis='y', linestyle='--', alpha=0.7)
-plt.tight_layout()
-plt.show()
-
-# Gesamtzahl der individuellen Datensätze
-gesamt_anzahl = anzahl_individuelle_datensaetze
-
-# Häufigkeitsverteilung mit Prozentangaben
-haeufigkeit_verteilung_prozent = (häufigkeit_verteilung / gesamt_anzahl) * 100
-
-# Erstellen einer Tabelle mit Häufigkeit und Prozentwerten
-haeufigkeit_verteilung_df = häufigkeit_verteilung.reset_index()
-haeufigkeit_verteilung_df.columns = ['Häufigkeit', 'Anzahl_id-content']
-haeufigkeit_verteilung_df['Prozent'] = (haeufigkeit_verteilung_df['Anzahl_id-content'] / gesamt_anzahl) * 100
-
-# Ausgabe der Tabelle
-print("\nHäufigkeitsverteilung der 'id-content'-Werte (mit Prozentangaben):")
-print(haeufigkeit_verteilung_df.to_string(index=False))
+def filter_dataframe(df, excluded_status, excluded_messages):
+    """Filter DataFrame based on excluded status and messages."""
+    return df[~df['status'].isin(excluded_status) & ~df['message'].isin(excluded_messages)]
 
 
+def analyze_message_short(df):
+    """Analyze and print message_short statistics."""
+    message_short_counts = df['message_short'].value_counts()
+    print("\nNumber of entries per Message Short (filtered):")
+    print(message_short_counts)
 
 
-# Ausgabe des DataFrames
-#print(df[df['status'] == 'error'][['id-content', 'message', 'message_short']].to_string())
+def analyze_id_content(df):
+    """Analyze and print id-content statistics."""
+    id_content_counts = df['id-content'].value_counts()
+    id_content_freq = id_content_counts.reset_index()
+    id_content_freq.columns = ['id-content', 'Frequency']
+    id_content_freq_filtered = id_content_freq[id_content_freq['Frequency'] > 1]
+
+    print("\nFrequency of 'id-content' values (only Frequency > 1):")
+    print(id_content_freq_filtered.to_string(index=False))
 
 
+def analyze_frequency_distribution(df):
+    """Analyze and print frequency distribution of id-content."""
+    id_content_counts = df['id-content'].value_counts()
+
+    # Get the frequency distribution
+    freq_distribution = id_content_counts.value_counts().sort_index()
+    total_count = len(df['id-content'].unique())
+
+    # Rename index and values
+    freq_distribution = freq_distribution.rename_axis('Frequency').reset_index(name='Count_id-content')
+
+    # Calculate percentages
+    freq_distribution['Percent'] = (freq_distribution['Count_id-content'] / total_count) * 100
+
+    # Output the results
+    print("\nFrequency distribution of 'id-content' values (with percentages):")
+    print(freq_distribution.to_string(index=False))
 
 
+def main():
+    INPUT_FILENAME = 'CalwerFULL_process.log'
+    DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
+    INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 
-with PdfPages(PDF_FILEPATH) as pdf:
-    # Seite 1: Zusammenfassung
-    fig, ax = plt.subplots(figsize=(8, 6))
-    fig.text(0.5, 0.95, 'Statistischer Report', fontsize=20, ha='center')
-    fig.text(0.1, 0.85, f"Anzahl der individuellen Datensätze (id-content): {anzahl_individuelle_datensaetze}", fontsize=12)
+    # Get today's date in YYMMDD format
+    today_date = datetime.now().strftime('_%y%m%d')
+    base_output_filename = f'CalwerFullStat{today_date}.txt'
+    OUTPUT_FILE = os.path.join(DIRECTORY_PATH, base_output_filename)
 
-    # Tabelle der Häufigkeitsverteilung
-    fig.text(0.1, 0.8, 'Häufigkeitsverteilung der "id-content"-Werte:', fontsize=12)
-    table_text = tabulate(haeufigkeit_verteilung_df, headers='keys', tablefmt='grid', showindex=False)
-    fig.text(0.1, 0.3, table_text, {'family': 'monospace'}, fontsize=10)
+    # Check if the file already exists and append a counter if it does
+    counter = 1
+    while os.path.exists(OUTPUT_FILE):
+        OUTPUT_FILENAME = f'CalwerFullStat{today_date}({counter}).txt'
+        OUTPUT_FILE = os.path.join(DIRECTORY_PATH, OUTPUT_FILENAME)
+        counter += 1
 
-    ax.axis('off')
-    pdf.savefig(fig)
-    plt.close()
+    # Open the output file and redirect stdout
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        # Create a class to duplicate stdout writes
+        class MultiWriter:
+            def __init__(self, *writers):
+                self.writers = writers
+            def write(self, data):
+                for w in self.writers:
+                    w.write(data)
+            def flush(self):
+                for w in self.writers:
+                    w.flush()
 
-    # Seite 2: Balkendiagramm der Häufigkeitsverteilung
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.bar(haeufigkeit_verteilung_df['Häufigkeit'].astype(str), haeufigkeit_verteilung_df['Anzahl_id-content'], color='skyblue')
-    ax.set_title("Anzahl der 'id-content'-Werte nach Häufigkeit")
-    ax.set_xlabel("Anzahl der Vorkommen eines 'id-content'-Wertes")
-    ax.set_ylabel("Anzahl der verschiedenen 'id-content'-Werte")
-    ax.grid(axis='y', linestyle='--', alpha=0.7)
-    pdf.savefig(fig)
-    plt.close()
+        original_stdout = sys.stdout  # Save a reference to the original standard output
+        sys.stdout = MultiWriter(sys.stdout, f)  # Redirect stdout to both console and file
 
-    # Seite 3: Häufigste Message Shorts
-    fig, ax = plt.subplots(figsize=(12, 8))
-    top_messages_short.plot(kind='bar', color='coral', ax=ax)
-    ax.set_title(f'Häufigste Message Shorts (Top {top_n}, gefiltert)')
-    ax.set_xlabel('Message Short')
-    ax.set_ylabel('Anzahl')
-    ax.tick_params(axis='x', rotation=45)
-    ax.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.tight_layout()
-    pdf.savefig(fig)
-    plt.close()
+        try:
+            data = load_data(INPUT_FILE)
+            df = create_dataframe(data)
 
+            unique_count = df['id-content'].nunique()
+            print(f"\nNumber of unique datasets (id-content): {unique_count}")
 
+            excluded_status = ['success']
+            excluded_messages = ['Paragraph too short, skipped processing.']
+            df_filtered = filter_dataframe(df, excluded_status, excluded_messages)
 
-print(f"\nDer Report wurde als '{PDF_FILEPATH}' gespeichert.")
+            analyze_message_short(df_filtered)
+            analyze_id_content(df_filtered)
+            analyze_frequency_distribution(df_filtered)
+        finally:
+            sys.stdout = original_stdout  # Reset stdout to original
+
+if __name__ == "__main__":
+    main()
+
 
 
