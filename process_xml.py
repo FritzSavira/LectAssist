@@ -31,16 +31,17 @@ def get_prompt():
                 Beispiel: "ward" → "wurde"
             c) Lexikonformat: Behalte den sachlichen Stil eines Lexikons bei.
             d) Namen: Schreibe den Namen des lexikalischen Artikels im Text aus (keine Abkürzung).
-            e) Abkürzungen: Ersetze alle Abkürzungen durch den vollständigen Text.
+            e) Abkürzungen: Ersetze Abkürzungen im Text durch den vollständigen Text.
                 Beispiel: "u." → "und", "z.B." → "zum Beispiel"
+            f) Die Abkürzungen innerhalb von xml-Tags müssen erhalten bleiben
+                Beispiel: "<data ref="Bible:Ps 104:4">Ps. 104, 4</data>" → "<data ref="Bible:Ps 104:4">Ps. 104, 4</data>"  
+            f) Nutze das deutsche System von Anführungszeichen „ ".
 
         2. Formatierung
-            a) **XML-Tags**: Bewahre alle vorhandenen XML-Tags an ihrer ursprünglichen Position.
-            b) **Absätze**: Gliedere Artikel mit mindestens drei Sätzen in Absätze.
-            Markiere neue Absätze wie folgt:
-            ***Start Absatz***
-            [Absatztext]
-            ***Ende Absatz***
+            a) XML-Tags: Bewahre alle vorhandenen XML-Tags an ihrer ursprünglichen Position.
+            b) Absätze: Gliedere Artikel mit mehr als drei Sätzen in thematische Absätze, sofern vorhanden.
+            Markiere den Beginn eines Absatzes mit 'StartAbsatz'
+            Markiere das Ende eines Absatzes mit 'EndeAbsatz'
 
         3. Ausgabe
             - Gib ausschließlich das bearbeitete Textfragment mit den originalen XML-Tags zurück.
@@ -110,14 +111,15 @@ def process_paragraph(model, p):
     content = ET.tostring(p, encoding='unicode', method='xml')
     content_text = get_text(p)
     # print commands for debugging purpose only.
-    # print("content: ", content)
+    print("*** NEUER PARAGRAPH ***")
+    print("content: ", content)
     # print(f"\nContent text: {content_text}")
 
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
         response = generate_content_with_retries(model, get_prompt(), content)
         # print commands for debugging purpose only.
         # print()
-        # print("response direkt aus KI: ", response)
+        print("response direkt aus KI: ", response)
 
         content_tags = re.findall(r'<[^>]+>', content)
         response_tags = re.findall(r'<[^>]+>', response)
@@ -125,8 +127,8 @@ def process_paragraph(model, p):
 
         if tags_match:
             # Perform the requested string replacements
-            response = response.replace("***Start Absatz***", "<p>")
-            response = response.replace("***Ende Absatz***", "</p>")
+            response = response.replace("StartAbsatz", "<p>")
+            response = response.replace("EndeAbsatz", "</p>")
             #response = response.replace("~SH~", '<p field="heading" class="head2">')
             #response = response.replace("~EH~", "</p>")
 
@@ -140,9 +142,10 @@ def process_paragraph(model, p):
             try:
                 p.clear()
                 # print commands for debugging purpose only.
-                # print("response: ", response)
+                print("response: ", response)
                 response_element = ET.fromstring(response)
                 p.append(response_element)
+
                 return True, log_text, content_text, response_text
 
             except Exception as e:
@@ -163,7 +166,7 @@ def process_paragraph(model, p):
     else:
         log_text = "Paragraph too short, skipped processing."
         print(log_text)
-    return False, log_text, content_text, "N/A"
+        return True, log_text, content_text, "N/A"
 
 
 def process_article(model, article, processed_articles, checkpoint_file):
@@ -176,12 +179,12 @@ def process_article(model, article, processed_articles, checkpoint_file):
         return False
 
     print(f"\nProcessing article_id: {article_id}")
-    article_modified = False
+    article_modified = True
 
     for p in article.findall('.//p'):
         modified, log_text, content_text, response_text = process_paragraph(model, p)
-        if modified:
-            article_modified = True
+        if not modified:
+            article_modified = False
 
         log_entry = {
             "id": article_id,
@@ -214,6 +217,7 @@ def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkp
         if process_article(model, article, processed_articles, checkpoint_file):
             tree.write(output_file, encoding='utf-8', xml_declaration=True)
             print(f"XML file has been updated: {output_file}")
+            pass
 
     print(f"XML file has been processed successfully: {file_path}")
     return root

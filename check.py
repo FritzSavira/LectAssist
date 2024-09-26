@@ -19,6 +19,10 @@ class LogViewer:
         self.create_widgets()
         self.load_file()
 
+        # Hinzufügen der Event-Bindings für die Pfeiltasten
+        self.master.bind('<Left>', lambda event: self.prev_record())
+        self.master.bind('<Right>', lambda event: self.next_record())
+
     def create_widgets(self):
         # ID Input Field
         self.id_input_frame = tk.Frame(self.master)
@@ -62,9 +66,6 @@ class LogViewer:
 
         self.next_button = tk.Button(self.button_frame, text="Next Record", command=self.next_record)
         self.next_button.pack(side=tk.RIGHT)
-
-        self.save_button = tk.Button(self.button_frame, text="Save", command=self.save_record)
-        self.save_button.pack()
 
         # Error message label
         self.error_label = tk.Label(self.master, text="", fg="red")
@@ -162,19 +163,6 @@ class LogViewer:
             self.current_index += 1
             self.display_record()
 
-    def save_record(self):
-        if self.records and self.file_path:
-            self.records[self.current_index]['response'] = self.right_text.get('1.0', tk.END).strip()
-            self.records[self.current_index]['status'] = 'edited'
-
-            # Update the display to show the new status
-            self.status_label.config(text=f"Status: edited")
-
-            # Write the updated records back to the file
-            with open(self.file_path, 'w', encoding='utf-8') as file:
-                for record in self.records:
-                    json_str = json.dumps(record)
-                    file.write(f"{record['id']} - {json_str}\n")
 
     def on_scroll(self, *args):
         self.left_text.yview_moveto(args[1])
