@@ -214,10 +214,11 @@ def process_article(model, article, processed_articles, checkpoint_file):
     return article_modified
 
 
-def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file) -> ET.Element:
+def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file,
+                     start_article=0) -> ET.Element:
     """
     Main function to process the XML file.
-    It iterates through all articles, processes them, and updates the file.
+    It iterates through all articles starting from the specified start_article index, processes them, and updates the file.
     """
     print(f"Processing XML file: {file_path}")
     parser = ET.XMLParser(encoding="utf-8")
@@ -226,11 +227,19 @@ def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkp
 
     processed_articles = load_checkpoint(checkpoint_file)
 
-    for article in root.findall('.//article'):
+    # Retrieve all articles into a list
+    articles = root.findall('.//article')
+
+    # Iterate over articles starting from start_article
+    for article in articles[start_article:]:
+        start_article = start_article + 1
+        print("Nr.: ", start_article)
         if process_article(model, article, processed_articles, checkpoint_file):
             tree.write(output_file, encoding='utf-8', xml_declaration=True)
+
             print(f"XML file has been updated: {output_file}")
             pass
 
     print(f"XML file has been processed successfully: {file_path}")
     return root
+
