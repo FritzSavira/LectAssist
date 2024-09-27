@@ -1,5 +1,6 @@
 import os
 import logging
+import subprocess
 import google.generativeai as genai
 
 # Determine processing mode 'xml' or 'text'
@@ -7,6 +8,7 @@ PROCESSING_MODE = 'xml'
 
 # Determine AI provider
 PROVIDER ='google'
+STRAICO_API_KEY = 'iv-oKfDouiGpue58YhI6KYQcLdNNdkw70hvosoeypwaYY41X6zA'
 
 # Input filename
 INPUT_FILENAME = 'CalwerFULL_240925.xml'
@@ -39,6 +41,8 @@ def configure_api():
         if not genai_api_key:
             raise ValueError("GENAI_API_KEY environment variable not set")
         genai.configure(api_key=genai_api_key)
+    elif PROVIDER == 'straico':
+        pass
     else:
         pass
 

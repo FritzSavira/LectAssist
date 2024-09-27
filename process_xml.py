@@ -17,12 +17,9 @@ def get_prompt():
     This prompt instructs the AI on how to process the text.
     """
     return '''Du bist ein KI-Assistent, als professioneller Lektor lektorierst du das Calwer Bibellexikon von 1912.
-        Deine Aufgabe ist es, Textfragmente zu modernisieren und zu formatieren.
-
-        Kontext:
-        Das Calwer Bibellexikon ist ein bedeutendes theologisches Nachschlagewerk.
-        Deine Bearbeitung soll den Text für moderne Leser zugänglicher machen, ohne den ursprünglichen Sinn zu verfälschen.
-
+        
+        Prämisse: XML-Tags müssen an ihrer ursprünglichen Position bleiben.
+        
         Hauptaufgaben:
 
         1. Textbearbeitung
@@ -31,14 +28,12 @@ def get_prompt():
                 Beispiel: "ward" → "wurde"
             c) Lexikonformat: Behalte den sachlichen Stil eines Lexikons bei.
             d) Namen: Schreibe den Namen des lexikalischen Artikels im Text aus (keine Abkürzung).
-            e) Abkürzungen: Ersetze Abkürzungen im Text durch den vollständigen Text.
-                Beispiel: "u." → "und", "z.B." → "zum Beispiel"
-            f) Die Abkürzungen innerhalb von xml-Tags müssen erhalten bleiben
-                Beispiel: "<data ref="Bible:Ps 104:4">Ps. 104, 4</data>" → "<data ref="Bible:Ps 104:4">Ps. 104, 4</data>"  
+            e) Abkürzungen: Ersetze Abkürzungen in den Textknoten durch den vollständigen Text.
+                Beispiel: "u." → "und", "z.B." → "zum Beispiel"  
             f) Nutze das deutsche System von Anführungszeichen „ ".
 
         2. Formatierung
-            a) XML-Tags: Bewahre alle vorhandenen XML-Tags an ihrer ursprünglichen Position.
+            a) XML-Tags: XML-Tags müssen an ihrer ursprünglichen Position bleiben.
             b) Absätze: Gliedere Artikel mit mehr als drei Sätzen in thematische Absätze, sofern vorhanden.
             Markiere den Beginn eines Absatzes mit 'StartAbsatz'
             Markiere das Ende eines Absatzes mit 'EndeAbsatz'
@@ -110,16 +105,18 @@ def process_paragraph(model, p):
     """
     content = ET.tostring(p, encoding='unicode', method='xml')
     content_text = get_text(p)
-    # print commands for debugging purpose only.
+    print()
     print("*** NEUER PARAGRAPH ***")
-    print("content: ", content)
-    # print(f"\nContent text: {content_text}")
 
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
+        # Print commands for debugging purposes only.
+        # print("content: ", content)
+
         response = generate_content_with_retries(model, get_prompt(), content)
-        # print commands for debugging purpose only.
+
+        # Print commands for debugging purposes only.
         # print()
-        print("response direkt aus KI: ", response)
+        # print("response direkt aus KI: ", response)
 
         content_tags = re.findall(r'<[^>]+>', content)
         response_tags = re.findall(r'<[^>]+>', response)
@@ -129,11 +126,11 @@ def process_paragraph(model, p):
             # Perform the requested string replacements
             response = response.replace("StartAbsatz", "<p>")
             response = response.replace("EndeAbsatz", "</p>")
-            #response = response.replace("~SH~", '<p field="heading" class="head2">')
-            #response = response.replace("~EH~", "</p>")
+            # response = response.replace("~SH~", '<p field="heading" class="head2">')
+            # response = response.replace("~EH~", "</p>")
 
             response_text = re.sub(r'<[^>]+>', '', response)
-            # print commands for debugging purpose only.
+            # Print commands for debugging purposes only.
             # print(f"\nResponse text: {response_text}")
 
             log_text = "XML tags in content and response are identical."
@@ -141,8 +138,9 @@ def process_paragraph(model, p):
 
             try:
                 p.clear()
-                # print commands for debugging purpose only.
-                print("response: ", response)
+                # Print commands for debugging purposes only.
+                # print()
+                # print("response: ", response)
                 response_element = ET.fromstring(response)
                 p.append(response_element)
 
@@ -157,8 +155,22 @@ def process_paragraph(model, p):
                 return False, log_text, content_text, response_text
 
         else:
+            # Extended comparison to display differences
+
+            print()
+            print("Warning: XML tags in content and response do not match.")
+            print("Differences between content_tags and response_tags:")
+
+            # Determine the maximum length between the two lists
+            max_length = max(len(content_tags), len(response_tags))
+            for i in range(max_length):
+                ctag = content_tags[i] if i < len(content_tags) else 'None'
+                rtag = response_tags[i] if i < len(response_tags) else 'None'
+                if ctag != rtag:
+                    print(f"At position {i}: content_tag = {ctag}  response_tag = {rtag}")
+
             response_text = re.sub(r'<[^>]+>', '', response)
-            # print commands for debugging purpose only.
+            # Print commands for debugging purposes only.
             # print(f"\nResponse text: {response_text}")
             log_text = "Warning: XML tags in content and response do not match. Keeping original content."
             print(log_text)
@@ -185,6 +197,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
         modified, log_text, content_text, response_text = process_paragraph(model, p)
         if not modified:
             article_modified = False
+            return article_modified
 
         log_entry = {
             "id": article_id,
