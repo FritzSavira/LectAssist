@@ -3,12 +3,14 @@ import re
 import time
 import logging
 import json
+import subprocess
 import xml.etree.ElementTree as ET
 
 # Constants
 MIN_WORDS_PARAGRAPH = 5
 MAX_RETRIES = 5
 BACKOFF_FACTOR = 0.3
+STRAICO_API_KEY = 'iv-oKfDouiGpue58YhI6KYQcLdNNdkw70hvosoeypwaYY41X6zA'
 
 
 def get_prompt():
@@ -18,10 +20,9 @@ def get_prompt():
     """
     return '''Du bist ein KI-Assistent, als professioneller Lektor lektorierst du das Calwer Bibellexikon von 1912.
         
-        Prämisse: XML-Tags müssen an ihrer ursprünglichen Position bleiben.
+        Prämisse: XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
         
         Hauptaufgaben:
-
         1. Textbearbeitung
             a) Rechtschreibung: Wende die neue deutsche Rechtschreibung vom 01.08.2007 an.
             b) Vokabular: Ersetze veraltete Wörter durch moderne Äquivalente. 
@@ -33,7 +34,7 @@ def get_prompt():
             f) Nutze das deutsche System von Anführungszeichen „ ".
 
         2. Formatierung
-            a) XML-Tags: XML-Tags müssen an ihrer ursprünglichen Position bleiben.
+            a) XML: XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
             b) Absätze: Gliedere Artikel mit mehr als drei Sätzen in thematische Absätze, sofern vorhanden.
             Markiere den Beginn eines Absatzes mit 'StartAbsatz'
             Markiere das Ende eines Absatzes mit 'EndeAbsatz'
@@ -41,7 +42,9 @@ def get_prompt():
         3. Ausgabe
             - Gib ausschließlich das bearbeitete Textfragment mit den originalen XML-Tags zurück.
             - Vermeide jeglichen weiteren Kommentar.
-
+        
+        Wichtig: XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
+        
         Hinweis: Hier beginnt das Textfragment der XML-Datei:'''
 
 
@@ -52,7 +55,7 @@ def get_text(element: ET.Element) -> str:
     return ''.join(element.itertext())
 
 
-def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
+def generate_content_with_retries_google(model, prompt: str, chunk: str) -> str:
     """
     Attempts to generate content using the AI model with retry mechanism.
     """
@@ -71,6 +74,36 @@ def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
         except Exception as e:
             print(f"An error occurred in generate_content(): {e}")
             return str(e)
+
+
+def generate_content_straico(model, prompt: str, chunk: str) -> str:
+    data = {
+        "model": "anthropic/claude-3.5-sonnet",
+        "message": prompt + chunk
+    }
+
+    json_data = json.dumps(data, ensure_ascii=False)
+
+    curl_command = [
+        'curl',
+        '--location', 'https://api.straico.com/v0/prompt/completion',
+        '--header', f'Authorization: Bearer {STRAICO_API_KEY}',
+        '--header', 'Content-Type: application/json',
+        '--data', json_data
+    ]
+    # Versuche, die Ausgabe als JSON zu parsen
+    output_json = json.loads(subprocess.run(curl_command, capture_output=True, text=True).stdout)
+
+    # Überprüfe, ob 'content' im JSON vorhanden ist
+    if 'content' in output_json['data']['completion']['choices'][0]['message']:
+        content = output_json['data']['completion']['choices'][0]['message']['content']
+        print(content)
+    else:
+        pass
+    return content
+
+
+
 
 
 def load_checkpoint(checkpoint_file):
@@ -112,7 +145,7 @@ def process_paragraph(model, p):
         # Print commands for debugging purposes only.
         # print("content: ", content)
 
-        response = generate_content_with_retries(model, get_prompt(), content)
+        response = generate_content_with_retries_google(model, get_prompt(), content)
 
         # Print commands for debugging purposes only.
         # print()
@@ -144,7 +177,7 @@ def process_paragraph(model, p):
                 response_element = ET.fromstring(response)
                 p.append(response_element)
 
-                return True, log_text, content_text, response_text
+                return True, log_text, content_text, response_text, content, response
 
             except Exception as e:
                 # Write original content back in xml-file
@@ -152,7 +185,7 @@ def process_paragraph(model, p):
                 p.append(response_element)
                 log_text = f"An error occurred in process_paragraph(): {e} Keeping original content."
                 print(log_text)
-                return False, log_text, content_text, response_text
+                return False, log_text, content_text, response_text, content, "N/A"
 
         else:
             # Extended comparison to display differences
@@ -174,11 +207,11 @@ def process_paragraph(model, p):
             # print(f"\nResponse text: {response_text}")
             log_text = "Warning: XML tags in content and response do not match. Keeping original content."
             print(log_text)
-            return False, log_text, content_text, response_text
+            return False, log_text, content_text, response_text, content, response
     else:
         log_text = "Paragraph too short, skipped processing."
         print(log_text)
-        return True, log_text, content_text, "N/A"
+        return True, log_text, content_text, "N/A", content, "N/A"
 
 
 def process_article(model, article, processed_articles, checkpoint_file):
@@ -194,17 +227,20 @@ def process_article(model, article, processed_articles, checkpoint_file):
     article_modified = True
 
     for p in article.findall('.//p'):
-        modified, log_text, content_text, response_text = process_paragraph(model, p)
+        modified, log_text, content_text, response_text, content, response = process_paragraph(model, p)
         if not modified:
             article_modified = False
-            return article_modified
 
         log_entry = {
             "id": article_id,
             "status": "success" if modified else "error",
             "message": log_text,
-            "content": content_text,
-            "response": response_text
+            "content_text": content_text,
+            "response_text": response_text,
+            "content": content,
+            "response": response
+
+
         }
         logging.info(json.dumps(log_entry, ensure_ascii=False))
 
@@ -215,7 +251,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
 
 
 def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file,
-                     start_article=0) -> ET.Element:
+                     start_article=3039) -> ET.Element:
     """
     Main function to process the XML file.
     It iterates through all articles starting from the specified start_article index, processes them, and updates the file.

@@ -1,6 +1,5 @@
 import os
 import logging
-import subprocess
 import google.generativeai as genai
 
 # Determine processing mode 'xml' or 'text'
@@ -8,10 +7,9 @@ PROCESSING_MODE = 'xml'
 
 # Determine AI provider
 PROVIDER ='google'
-STRAICO_API_KEY = 'iv-oKfDouiGpue58YhI6KYQcLdNNdkw70hvosoeypwaYY41X6zA'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_240925.xml'
+INPUT_FILENAME = 'CalwerFULL_240928.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'

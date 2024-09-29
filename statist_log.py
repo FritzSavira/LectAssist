@@ -4,6 +4,11 @@ import os
 import sys
 from datetime import datetime
 
+INPUT_FILENAME = 'CalwerFULL_240928_process.log'
+DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
+INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
+
+
 def load_data(file_path):
     """Load data from log file and return a list of parsed entries."""
     data = []
@@ -32,8 +37,8 @@ def create_dataframe(data):
     df = pd.DataFrame(data)
     df['message_short'] = df['message'].apply(extract_message_short)
     df['message_short'] = df['message_short'].str.encode('ascii', errors='ignore').str.decode('ascii')
-    df['id-content'] = df['id'] + ' ' + df['content'].str[:50]
-    df['id-content-message'] = df['id-content'] + ' ' + df['message_short']
+    df['id-content'] = df['id'] + '|' + df['content'].str[:50]
+    df['id-content-message'] = df['id-content'] + ' | ' + df['message_short']
 
     # Convert timestamp to datetime
     df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -43,7 +48,6 @@ def create_dataframe(data):
 
     # Create the 'latest' column
     df['latest'] = df.groupby('id-content')['timestamp'].transform('max') == df['timestamp']
-
     return df
 
 
@@ -56,56 +60,7 @@ def filter_dataframe(df, excluded_status, excluded_messages):
     ]
 
 
-
-def analyze_message_short(df):
-    """Analyze and print message_short statistics."""
-    message_short_counts = df['message_short'].value_counts()
-    print("\nNumber of entries per Message Short (filtered):")
-    print(message_short_counts)
-
-
-def analyze_id_content(df):
-    """Analyze and print id-content statistics."""
-    id_content_counts = df['id-content-message'].value_counts()
-    id_content_freq = id_content_counts.reset_index()
-    id_content_freq.columns = ['id-content-message', 'Frequency']
-    #id_content_freq_filtered = id_content_freq[id_content_freq['Frequency'] > 1]
-
-    # Sort the DataFrame by 'Frequency' (descending) and then by 'id-content-message'
-    id_content_freq_sorted = id_content_freq.sort_values(
-        by=['id-content-message'],
-        ascending=[True]
-    )
-
-    print("\n'id-content-message':")
-    print(id_content_freq_sorted.to_string(index=False))
-
-
-
-def analyze_frequency_distribution(df):
-    """Analyze and print frequency distribution of id-content."""
-    id_content_counts = df['id-content'].value_counts()
-
-    # Get the frequency distribution
-    freq_distribution = id_content_counts.value_counts().sort_index()
-    total_count = len(df['id-content'].unique())
-
-    # Rename index and values
-    freq_distribution = freq_distribution.rename_axis('Frequency').reset_index(name='Count_id-content')
-
-    # Calculate percentages
-    freq_distribution['Percent'] = (freq_distribution['Count_id-content'] / total_count) * 100
-
-    # Output the results
-    print("\nFrequency distribution of 'id-content' values (with percentages):")
-    print(freq_distribution.to_string(index=False))
-
-
 def main():
-    INPUT_FILENAME = 'CalwerFULL_process.log'
-    DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
-    INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
-
     # Get today's date in YYMMDD format
     today_date = datetime.now().strftime('_%y%m%d')
     base_output_filename = f'CalwerFullStat{today_date}.txt'
@@ -138,22 +93,30 @@ def main():
             data = load_data(INPUT_FILE)
             df = create_dataframe(data)
 
-            unique_count = df['id-content'].nunique()
-            print(f"\nNumber of unique datasets (id-content): {unique_count}")
-
-
             excluded_status = ['success']
             excluded_messages = ['Paragraph too short, skipped processing.']
             df_filtered = filter_dataframe(df, excluded_status, excluded_messages)
 
-            analyze_message_short(df_filtered)
-            analyze_id_content(df_filtered)
-            analyze_frequency_distribution(df_filtered)
+            # Determine the unique messages in 'message_short' in df_filtered
+            unique_messages = df_filtered['message_short'].unique()
+            num_unique_messages = len(unique_messages)
+            print(f"\nNumber of unique messages in 'message_short': {num_unique_messages}")
+
+            # Get the counts of each unique message
+            message_counts = df_filtered['message_short'].value_counts()
+
+            # Print the unique messages and their counts
+            print("\nUnique messages and their counts:")
+            for message, count in message_counts.items():
+                print(f"'{message}': {count}")
+
+            # Print the 'id-content-message' entries from df_filtered
+            print("\nDatensätze von df_filtered['id-content-message']:")
+            for entry in df_filtered['id-content-message']:
+                print(entry)
+
         finally:
             sys.stdout = original_stdout  # Reset stdout to original
 
 if __name__ == "__main__":
     main()
-
-
-
