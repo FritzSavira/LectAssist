@@ -110,6 +110,11 @@ def main():
             for message, count in message_counts.items():
                 print(f"'{message}': {count}")
 
+            # Determine the unique ids in 'id' in d_filtered
+            unique_ids = df_filtered['id'].unique()
+            num_unique_ids = len(unique_ids)
+            print(f"\nNumber of unique IDs in 'ID': {num_unique_ids}")
+
             # Print the 'id-content-message' entries from df_filtered
             print("\nDatensätze von df_filtered['id-content-message']:")
             for entry in df_filtered['id-content-message']:

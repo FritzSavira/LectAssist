@@ -9,7 +9,7 @@ PROCESSING_MODE = 'xml'
 PROVIDER ='google'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_240928.xml'
+INPUT_FILENAME = 'CalwerFULL_241002.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'

@@ -18,9 +18,11 @@ def get_prompt():
     Returns the prompt for the AI model.
     This prompt instructs the AI on how to process the text.
     """
-    return '''Du bist ein KI-Assistent, als professioneller Lektor lektorierst du das Calwer Bibellexikon von 1912.
+    return '''Du bist ein KI-Assistent, als professioneller Lektor lektorierst du ein Lexikon.
         
         Prämisse: XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
+                Vermeide neue XML-Tags.
+                Vermeide neue XML-Elemente.
         
         Hauptaufgaben:
         1. Textbearbeitung
@@ -36,8 +38,7 @@ def get_prompt():
         2. Formatierung
             a) XML: XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
             b) Absätze: Gliedere Artikel mit mehr als drei Sätzen in thematische Absätze, sofern vorhanden.
-            Markiere den Beginn eines Absatzes mit 'StartAbsatz'
-            Markiere das Ende eines Absatzes mit 'EndeAbsatz'
+            Markiere den Beginn eines neuen Absatzes mit 'StartAbsatz'
 
         3. Ausgabe
             - Gib ausschließlich das bearbeitete Textfragment mit den originalen XML-Tags zurück.
@@ -157,8 +158,8 @@ def process_paragraph(model, p):
 
         if tags_match:
             # Perform the requested string replacements
-            response = response.replace("StartAbsatz", "<p>")
-            response = response.replace("EndeAbsatz", "</p>")
+            #response = response.replace('StartAbsatz', '</p><p class="Body">')
+            # response = response.replace("EndeAbsatz", "</p>")
             # response = response.replace("~SH~", '<p field="heading" class="head2">')
             # response = response.replace("~EH~", "</p>")
 
@@ -205,9 +206,32 @@ def process_paragraph(model, p):
             response_text = re.sub(r'<[^>]+>', '', response)
             # Print commands for debugging purposes only.
             # print(f"\nResponse text: {response_text}")
-            log_text = "Warning: XML tags in content and response do not match. Keeping original content."
+            log_text = "!!!Warning: XML tags in content and response do not match!!!"
             print(log_text)
-            return False, log_text, content_text, response_text, content, response
+            p.clear()
+            # Print commands for debugging purposes only.
+            # print()
+            # print("response: ", response)
+            # Parse the response string into an XML element
+            print("response:", response)
+            response_element = ET.fromstring(response)
+            print("check1")
+            # Insert log_text at the beginning of the first text node
+            found = False
+            for elem in response_element.iter():
+                if elem.text and elem.text.strip():
+                    elem.text = log_text + elem.text
+                    found = True
+                    break
+            if not found:
+                # If no text node found with text, insert log_text in root's text
+                if response_element.text:
+                    response_element.text = log_text + response_element.text
+                else:
+                    response_element.text = log_text
+            print("response_element:", response_element)
+            p.append(response_element)
+            return True, log_text, content_text, response_text, content, response
     else:
         log_text = "Paragraph too short, skipped processing."
         print(log_text)
@@ -251,7 +275,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
 
 
 def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file,
-                     start_article=3039) -> ET.Element:
+                     start_article=1579) -> ET.Element:
     """
     Main function to process the XML file.
     It iterates through all articles starting from the specified start_article index, processes them, and updates the file.
