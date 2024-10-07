@@ -9,7 +9,7 @@ PROCESSING_MODE = 'xml'
 PROVIDER ='google'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_241002.xml'
+INPUT_FILENAME = 'CalwerFULL_241005.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
@@ -19,6 +19,7 @@ INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 CHECKPOINT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
 OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.xml')
 PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_process.log')
+ERROR_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_error.log')
 
 
 def configure_logging():
@@ -60,7 +61,7 @@ def process_files(mode, model):
         process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml':
         from process_xml import process_xml_file
-        process_xml_file(INPUT_FILE, model, OUTPUT_TXT_PATH, FINISHED_PATH, CHECKPOINT_FILE, OUTPUT_FILE)
+        process_xml_file(INPUT_FILE, model, OUTPUT_TXT_PATH, FINISHED_PATH, CHECKPOINT_FILE, OUTPUT_FILE, ERROR_LOG_FILE)
 
 
 def main():

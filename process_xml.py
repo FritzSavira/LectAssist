@@ -133,7 +133,7 @@ def update_checkpoint(checkpoint_file, processed_articles, article_id):
     save_checkpoint(checkpoint_file, processed_articles)
 
 
-def process_paragraph(model, p):
+def process_paragraph(model, p, article_id, error_log_file):
     """
     Processes a single paragraph using the AI model.
     """
@@ -177,14 +177,14 @@ def process_paragraph(model, p):
                 # print("response: ", response)
                 response_element = ET.fromstring(response)
                 p.append(response_element)
-
                 return True, log_text, content_text, response_text, content, response
 
             except Exception as e:
                 # Write original content back in xml-file
-                response_element = ET.fromstring(content)
+                response_element = ET.fromstring(response)
                 p.append(response_element)
-                log_text = f"An error occurred in process_paragraph(): {e} Keeping original content."
+                log_text = f"An error occurred in process_paragraph(): {e}"
+
                 print(log_text)
                 return False, log_text, content_text, response_text, content, "N/A"
 
@@ -192,16 +192,6 @@ def process_paragraph(model, p):
             # Extended comparison to display differences
 
             print()
-            print("Warning: XML tags in content and response do not match.")
-            print("Differences between content_tags and response_tags:")
-
-            # Determine the maximum length between the two lists
-            max_length = max(len(content_tags), len(response_tags))
-            for i in range(max_length):
-                ctag = content_tags[i] if i < len(content_tags) else 'None'
-                rtag = response_tags[i] if i < len(response_tags) else 'None'
-                if ctag != rtag:
-                    print(f"At position {i}: content_tag = {ctag}  response_tag = {rtag}")
 
             response_text = re.sub(r'<[^>]+>', '', response)
             # Print commands for debugging purposes only.
@@ -214,31 +204,73 @@ def process_paragraph(model, p):
             # print("response: ", response)
             # Parse the response string into an XML element
             print("response:", response)
-            response_element = ET.fromstring(response)
-            print("check1")
-            # Insert log_text at the beginning of the first text node
-            found = False
-            for elem in response_element.iter():
-                if elem.text and elem.text.strip():
-                    elem.text = log_text + elem.text
-                    found = True
-                    break
-            if not found:
-                # If no text node found with text, insert log_text in root's text
-                if response_element.text:
-                    response_element.text = log_text + response_element.text
-                else:
-                    response_element.text = log_text
-            print("response_element:", response_element)
-            p.append(response_element)
-            return True, log_text, content_text, response_text, content, response
+            try:
+                response_element = ET.fromstring(response) # Hier Fehlerbehandlung notwendig
+                print("check1")
+                # Insert log_text at the beginning of the first text node
+                found = False
+                for elem in response_element.iter():
+                    if elem.text and elem.text.strip():
+                        elem.text = log_text + elem.text
+                        found = True
+                        break
+                if not found:
+                    # If no text node found with text, insert log_text in root's text
+                    if response_element.text:
+                        response_element.text = log_text + response_element.text
+                    else:
+                        response_element.text = log_text
+                print("response_element:", response_element)
+                p.append(response_element)
+                return True, log_text, content_text, response_text, content, response
+            except Exception as e:
+                # Handle the error
+                # Get article ID
+                error_message = str(e)
+                # Get content of 'response' (already have it)
+                error_data = {
+                    'article_id': article_id,
+                    'error_message': error_message,
+                    'response': response
+                }
+                # Write error_data to a json file
+                # If file exists, load it, append error_data, and save it
+                # If file does not exist, create it
+
+                json_filename = error_log_file
+                try:
+                    # Try to read existing data
+                    with open(json_filename, 'r', encoding='utf-8') as f:
+                        error_list = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    # File does not exist or is empty/invalid, create a new list
+                    error_list = []
+
+                error_list.append(error_data)
+
+                # Write back to file
+                with open(json_filename, 'w', encoding='utf-8') as f:
+                    json.dump(error_list, f, indent=4, ensure_ascii=False)
+
+                # Continue processing, perhaps write original content back
+                # For the error case, we can decide what to do
+
+                log_text = f"An error occurred while parsing response XML: {error_message}."
+
+                # Write original content back in xml-file
+                p.clear()
+                response_element = ET.fromstring(response)
+                p.append(response_element)
+
+                print(log_text)
+                return True, log_text, content_text, response_text, content, "N/A"
     else:
         log_text = "Paragraph too short, skipped processing."
         print(log_text)
         return True, log_text, content_text, "N/A", content, "N/A"
 
 
-def process_article(model, article, processed_articles, checkpoint_file):
+def process_article(model, article, processed_articles, checkpoint_file, error_log_file):
     """
     Processes a single article, updating its paragraphs.
     """
@@ -251,7 +283,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
     article_modified = True
 
     for p in article.findall('.//p'):
-        modified, log_text, content_text, response_text, content, response = process_paragraph(model, p)
+        modified, log_text, content_text, response_text, content, response = process_paragraph(model, p, article_id, error_log_file)
         if not modified:
             article_modified = False
 
@@ -274,8 +306,8 @@ def process_article(model, article, processed_articles, checkpoint_file):
     return article_modified
 
 
-def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file,
-                     start_article=1579) -> ET.Element:
+def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkpoint_file, output_file, error_log_file,
+                     start_article=0) -> ET.Element:
     """
     Main function to process the XML file.
     It iterates through all articles starting from the specified start_article index, processes them, and updates the file.
@@ -294,7 +326,7 @@ def process_xml_file(file_path: str, model, output_txt_dir, finished_dir, checkp
     for article in articles[start_article:]:
         start_article = start_article + 1
         print("Nr.: ", start_article)
-        if process_article(model, article, processed_articles, checkpoint_file):
+        if process_article(model, article, processed_articles, checkpoint_file, error_log_file):
             tree.write(output_file, encoding='utf-8', xml_declaration=True)
 
             print(f"XML file has been updated: {output_file}")
