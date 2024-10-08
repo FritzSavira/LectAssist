@@ -3,7 +3,7 @@ import re
 import time
 import logging
 import json
-
+from openai import OpenAI
 import xml.etree.ElementTree as ET
 
 # Constants
@@ -26,6 +26,7 @@ Hauptaufgaben:
     b) Formuliere den Text in heute gebräuchliches Deutsch um.
     b) Der Text soll flüssig zu lesen sein und verschachtelte Sätze werden in ihre Hauptaussagen aufgeteilt.
     c) Teile längere Texte in thematische Absätze auf. Füge an den Start des neuen Absatzes "StartAbsatz" ein.
+    d) Namen: Schreibe den Namen des lexikalischen Artikels im Text aus (keine Abkürzung).
     
 3. Ausgabe
     - Gib ausschließlich das bearbeitete Textfragment mit den originalen XML-Tags zurück.
@@ -46,8 +47,27 @@ def get_text(element: ET.Element) -> str:
     """
     return ''.join(element.itertext())
 
+def call_ai(PROVIDER, model, prompt, chunk):
+    if PROVIDER == 'google':
+        return model.generate_content(prompt + chunk).text
 
-def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
+    elif PROVIDER == 'openai':
+        client = OpenAI()
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {
+                    "role": "user",
+                    "content": chunk
+                }
+            ],
+            temperature=0.5
+        )
+        return completion.choices[0].message.content
+
+
+def generate_content_with_retries(PROVIDER, model, prompt: str, chunk: str) -> str:
     """
     Attempts to generate content using the AI model with a retry mechanism.
 
@@ -62,7 +82,7 @@ def generate_content_with_retries(model, prompt: str, chunk: str) -> str:
     for attempt in range(MAX_RETRIES):
         try:
             print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
-            return model.generate_content(prompt + chunk).text
+            return call_ai(PROVIDER, model, prompt, chunk)
         except ConnectionError:
             if attempt < MAX_RETRIES - 1:
                 sleep_time = BACKOFF_FACTOR * (2 ** attempt)
@@ -137,7 +157,7 @@ def remove_redundant_p_tags(element):
             remove_redundant_p_tags(child)
 
 
-def process_paragraph(model, paragraph):
+def process_paragraph(PROVIDER, model, paragraph):
     """
     Processes a single paragraph using the AI model.
 
@@ -153,7 +173,7 @@ def process_paragraph(model, paragraph):
     content_text = get_text(paragraph)
     print("\n*** NEW PARAGRAPH ***")
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
-        response = generate_content_with_retries(model, get_prompt(), content)
+        response = generate_content_with_retries(PROVIDER, model, get_prompt(), content)
         response_text = re.sub(r'<[^>]+>', '', response)
         print("content_text: ")
         print(content_text)
@@ -179,7 +199,7 @@ def process_paragraph(model, paragraph):
         return True, log_text, content_text, "N/A", content, "N/A"
 
 
-def process_article(model, article, processed_articles, checkpoint_file):
+def process_article(PROVIDER, model, article, processed_articles, checkpoint_file):
     """
     Processes a single article, updating its paragraphs.
 
@@ -202,7 +222,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
 
     for paragraph in article.findall('.//p'):
         modified, log_text, content_text, response_text, content, response = process_paragraph(
-            model, paragraph
+            PROVIDER, model, paragraph
         )
         if not modified:
             article_modified = False
@@ -224,7 +244,7 @@ def process_article(model, article, processed_articles, checkpoint_file):
     return article_modified
 
 
-def process_xml_file(file_path: str, model, checkpoint_file, output_file, start_article=0) -> ET.Element:
+def process_xml_file(PROVIDER, file_path: str, model, checkpoint_file, output_file, start_article=0) -> ET.Element:
     """
     Main function to process the XML file.
 
@@ -247,7 +267,7 @@ def process_xml_file(file_path: str, model, checkpoint_file, output_file, start_
 
     for idx, article in enumerate(articles[start_article:], start=start_article + 1):
         print(f"Article Nr.: {idx}")
-        if process_article(model, article, processed_articles, checkpoint_file):
+        if process_article(PROVIDER, model, article, processed_articles, checkpoint_file):
             remove_redundant_p_tags(root)
             tree.write(output_file, encoding='utf-8', xml_declaration=True)
             print(f"XML file has been updated: {output_file}")

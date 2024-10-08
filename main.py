@@ -2,12 +2,13 @@ import sys
 import os
 import logging
 import google.generativeai as genai
+from openai import OpenAI
 
 # Determine processing mode 'xml' or 'text'
 PROCESSING_MODE = 'xml'
 
 # Determine AI provider
-PROVIDER = 'google'
+PROVIDER = 'openai'
 
 # Input filename
 INPUT_FILENAME = 'CalwerFULL.xml'
@@ -34,6 +35,9 @@ def configure_logging():
     )
 
 
+
+
+
 def configure_api():
     if PROVIDER == 'google':
         """Configure the Google GenerativeAI API."""
@@ -41,8 +45,9 @@ def configure_api():
         if not genai_api_key:
             raise ValueError("GENAI_API_KEY environment variable not set")
         genai.configure(api_key=genai_api_key)
-    elif PROVIDER == 'straico':
-        pass
+    elif PROVIDER == 'openai':
+        client = OpenAI()
+        return client
     else:
         pass
 
@@ -52,8 +57,12 @@ def initialize_model():
         """Initialize and return the GenerativeAI model."""
         model_name = 'gemini-1.5-pro'
         return genai.GenerativeModel(model_name)
+    elif PROVIDER == "openai":
+        model_name = 'gpt-4o'
+        return model_name
     else:
         pass
+
 
 
 def process_files(mode, model):
@@ -64,7 +73,7 @@ def process_files(mode, model):
         process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml':
         from process_xml import process_xml_file
-        process_xml_file(INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
+        process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
 
 
 def main():
