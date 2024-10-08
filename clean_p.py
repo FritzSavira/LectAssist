@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import os
 
-INPUT_FILENAME = 'CalwerFULL_240929_out_clean_p_clean_p.xml'
+#INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'

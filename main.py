@@ -9,7 +9,7 @@ PROCESSING_MODE = 'xml'
 PROVIDER ='google'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_241005.xml'
+INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
@@ -61,7 +61,7 @@ def process_files(mode, model):
         process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml':
         from process_xml import process_xml_file
-        process_xml_file(INPUT_FILE, model, OUTPUT_TXT_PATH, FINISHED_PATH, CHECKPOINT_FILE, OUTPUT_FILE, ERROR_LOG_FILE)
+        process_xml_file(INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
 
 
 def main():
