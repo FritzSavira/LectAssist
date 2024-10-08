@@ -3,13 +3,13 @@ import re
 import time
 import logging
 import json
+
 import xml.etree.ElementTree as ET
 
 # Constants
 MIN_WORDS_PARAGRAPH = 5  # Minimum number of words for a paragraph to be processed
 MAX_RETRIES = 5  # Maximum number of retries for content generation
 BACKOFF_FACTOR = 0.3  # Factor for exponential backoff in case of connection errors
-
 
 def get_prompt():
     """
@@ -20,13 +20,12 @@ def get_prompt():
 
 Prämisse:
 - XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
-- Vermeide neue XML-Tags und XML-Elemente.
 
 Hauptaufgaben:
 1. Textbearbeitung
     b) Formuliere den Text in heute gebräuchliches Deutsch um.
     b) Der Text soll flüssig zu lesen sein und verschachtelte Sätze werden in ihre Hauptaussagen aufgeteilt.
-    c) Lexikonformat: Behalte den sachlichen Stil eines Lexikons bei.
+    c) Teile längere Texte in thematische Absätze auf. Füge an den Start des neuen Absatzes "StartAbsatz" ein.
     
 3. Ausgabe
     - Gib ausschließlich das bearbeitete Textfragment mit den originalen XML-Tags zurück.

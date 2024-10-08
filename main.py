@@ -1,3 +1,4 @@
+import sys
 import os
 import logging
 import google.generativeai as genai
@@ -6,10 +7,10 @@ import google.generativeai as genai
 PROCESSING_MODE = 'xml'
 
 # Determine AI provider
-PROVIDER ='google'
+PROVIDER = 'google'
 
 # Input filename
-INPUT_FILENAME = 'DEPDBIBLEN-Content.xml'
+INPUT_FILENAME = 'CalwerFULL.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
@@ -45,6 +46,7 @@ def configure_api():
     else:
         pass
 
+
 def initialize_model():
     if PROVIDER == 'google':
         """Initialize and return the GenerativeAI model."""
@@ -52,6 +54,7 @@ def initialize_model():
         return genai.GenerativeModel(model_name)
     else:
         pass
+
 
 def process_files(mode, model):
     """Process files based on the selected mode."""
@@ -67,6 +70,11 @@ def process_files(mode, model):
 def main():
     """Main function to run the script."""
     try:
+        # Step 0: Sicherheitsabfrage
+        check = input("Hast du bei erneutem Durchlauf die _out.xml Datei eingefügt? (ja / nein)")
+        if check != "ja":
+            sys.exit()
+
         # Step 1: Set up logging
         configure_logging()
         print("Logging configured.")
@@ -81,8 +89,8 @@ def main():
 
         # Step 4: Process files
         process_files(PROCESSING_MODE, model)
-
         print("Processing completed successfully.")
+
     except Exception as e:
         print(f"An error occurred: {e}")
         print("The script will resume from the last checkpoint when restarted.")
@@ -90,4 +98,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
