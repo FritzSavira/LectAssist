@@ -1,0 +1,11 @@
+XML-Worflow
+1. process_xml_paragraph.py - Bearbeitet mit LLM Absätze <p> der xml-Datei (Umformulierung des Textes)
+2. absatz_in_xml.py - Wenn mit process_xml_paragraph.py "StartAbsatz"-TAGs durch das LLM eingefügt wurden, wird ein neuer <p>..</p>-Absatz erzeugt.
+3. process_xml_article.py - Bearbeitet mit LLM Artikel <article> der xml-Datei (Einfügen vonÜberschriften innerhalb von Artkeln).
+4. ueberschrift_in_xml.py - Wenn mit process_xml_article.py {{..}} Überschriften-TAGs durch das LLM eingefügt wurde, wird eine Überschrift im xml-Format erzeugt.
+5. bibelstellen_en_de.py - Wandelt die englischen Bibelstellenverweise in einheitlich formatierte deutsche Bibelstellen-Label im Text um.
+
+
+Allgemeine Skripts
+check.py - Viewer für ..._process.log Datei
+statist_log.py - Wertet fehlerhafte Datensätze in ...process.log Datei aus.

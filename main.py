@@ -5,13 +5,13 @@ import google.generativeai as genai
 from openai import OpenAI
 
 # Determine processing mode 'xml' or 'text'
-PROCESSING_MODE = 'xml'
+PROCESSING_MODE = 'xml_article'
 
 # Determine AI provider
 PROVIDER = 'openai'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL.xml'
+INPUT_FILENAME = 'CalwerFULL_241009_out_TransBiblEnDe_AbsInXml_B.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
@@ -58,8 +58,11 @@ def process_files(mode, model):
     if mode == 'text':
         from process_txt import process_text_files
         process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
-    elif mode == 'xml':
+    elif mode == 'xml_paragraph':
         from process_xml_paragraph import process_xml_file
+        process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
+    elif mode == 'xml_article':
+        from process_xml_article import process_xml_file
         process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
 
 
