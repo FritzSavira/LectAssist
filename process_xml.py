@@ -62,7 +62,7 @@ def call_ai(PROVIDER, model, prompt, chunk):
                     "content": chunk
                 }
             ],
-            temperature=0.5
+            temperature=0.6
         )
         return completion.choices[0].message.content
 

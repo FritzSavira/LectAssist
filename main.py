@@ -35,9 +35,6 @@ def configure_logging():
     )
 
 
-
-
-
 def configure_api():
     if PROVIDER == 'google':
         """Configure the Google GenerativeAI API."""
@@ -45,24 +42,14 @@ def configure_api():
         if not genai_api_key:
             raise ValueError("GENAI_API_KEY environment variable not set")
         genai.configure(api_key=genai_api_key)
-    elif PROVIDER == 'openai':
-        client = OpenAI()
-        return client
-    else:
-        pass
-
-
-def initialize_model():
-    if PROVIDER == 'google':
         """Initialize and return the GenerativeAI model."""
         model_name = 'gemini-1.5-pro'
         return genai.GenerativeModel(model_name)
-    elif PROVIDER == "openai":
+    elif PROVIDER == 'openai':
         model_name = 'gpt-4o'
         return model_name
     else:
         pass
-
 
 
 def process_files(mode, model):
@@ -89,12 +76,12 @@ def main():
         print("Logging configured.")
 
         # Step 2: Configure API
-        configure_api()
-        print("API key configured successfully.")
+        model = configure_api()
+        print("API configured successfully.")
 
         # Step 3: Initialize the model
-        model = initialize_model()
-        print("Model initialized.")
+#        model = initialize_model()
+#        print("Model initialized.")
 
         # Step 4: Process files
         process_files(PROCESSING_MODE, model)

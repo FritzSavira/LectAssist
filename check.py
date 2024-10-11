@@ -76,8 +76,21 @@ class LogViewer:
         if self.file_path:
             with open(self.file_path, 'r', encoding='utf-8') as file:
                 content = file.read()
-                self.records = [json.loads(line.split(' - ', 1)[1]) for line in content.strip().split('\n')]
-            self.display_record()
+                self.records = []
+                for line in content.strip().split('\n'):
+                    try:
+                        parts = line.split(' - ', 1)
+                        if len(parts) == 2:
+                            record = json.loads(parts[1])
+                            self.records.append(record)
+                    except json.JSONDecodeError:
+                        print(f"Fehler beim Parsen der Zeile: {line}")
+                    except IndexError:
+                        print(f"Ungültiges Zeilenformat: {line}")
+            if self.records:
+                self.display_record()
+            else:
+                print("Keine gültigen Datensätze gefunden.")
 
     def search_id(self, event):
         search_id = self.id_input.get()

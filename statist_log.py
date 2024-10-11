@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import datetime
 
-INPUT_FILENAME = 'CalwerFULL_240928_process.log'
+INPUT_FILENAME = 'CalwerFULL_process.log'
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 
