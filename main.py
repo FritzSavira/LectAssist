@@ -59,7 +59,7 @@ def process_files(mode, model):
         from process_txt import process_text_files
         process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml':
-        from process_xml import process_xml_file
+        from process_xml_paragraph import process_xml_file
         process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
 
 
