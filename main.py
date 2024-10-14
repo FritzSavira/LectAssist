@@ -5,13 +5,13 @@ import google.generativeai as genai
 from openai import OpenAI
 
 # Determine processing mode 'text' or 'xml_paragraph' or 'xml_article'
-PROCESSING_MODE = 'text'
+PROCESSING_MODE = 'xml_article'
 
 # Determine AI provider 'openai' or 'google'
 PROVIDER = 'openai'
 
 # Input filename
-INPUT_FILENAME = 'Sovereign_grace_kurz.txt'
+INPUT_FILENAME = 'CalwerFULL_241011_B_mit_Ueb.xml'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/'
@@ -19,7 +19,7 @@ FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
 OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 CHECKPOINT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
-OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.md')
+OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.xml')
 PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_process.log')
 ERROR_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_error.log')
 
@@ -51,6 +51,21 @@ def configure_api():
     else:
         pass
 
+def call_ai(PROVIDER, model, prompt, chunk):
+    if PROVIDER == 'google':
+        response = model.generate_content(prompt + chunk).text
+    elif PROVIDER == 'openai':
+        client = OpenAI()
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": chunk}
+            ],
+            temperature=0.6
+        )
+        response = completion.choices[0].message.content
+    return response
 
 def process_files(mode, model):
     """Process files based on the selected mode."""

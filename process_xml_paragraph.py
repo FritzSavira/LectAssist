@@ -3,8 +3,8 @@ import re
 import time
 import logging
 import json
-from openai import OpenAI
 import xml.etree.ElementTree as ET
+from main import call_ai
 
 # Constants
 MIN_WORDS_PARAGRAPH = 5  # Minimum number of words for a paragraph to be processed
@@ -47,21 +47,6 @@ def get_text(element: ET.Element) -> str:
     """
     return ''.join(element.itertext())
 
-def call_ai(PROVIDER, model, prompt, chunk):
-    if PROVIDER == 'google':
-        return model.generate_content(prompt + chunk).text
-
-    elif PROVIDER == 'openai':
-        client = OpenAI()
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": chunk}
-            ],
-            temperature=0.6
-        )
-        return completion.choices[0].message.content
 
 
 def generate_content_with_retries(PROVIDER, model, chunk: str) -> str:

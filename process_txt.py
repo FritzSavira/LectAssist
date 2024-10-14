@@ -4,7 +4,7 @@ import json
 import logging
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
-from openai import OpenAI
+from main import call_ai
 
 # Configuration variables
 WORDS_PER_CHUNK = 500
@@ -66,23 +66,6 @@ def save_as_md(text, filename):
     with open(new_filename, 'w', encoding='utf-8') as f:
         f.write(text)
     print(f"Response saved as Markdown file under: {new_filename}")
-
-
-def call_ai(PROVIDER, model, prompt, chunk):
-    if PROVIDER == 'google':
-        response = model.generate_content(prompt + chunk).text
-    elif PROVIDER == 'openai':
-        client = OpenAI()
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": chunk}
-            ],
-            temperature=0.6
-        )
-        response = completion.choices[0].message.content
-    return response
 
 
 def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_factor=0.3):
