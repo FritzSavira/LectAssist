@@ -1,9 +1,7 @@
 import os
 import time
 import json
-import shutil
 import logging
-import nltk
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
 from openai import OpenAI
@@ -69,6 +67,7 @@ def save_as_md(text, filename):
         f.write(text)
     print(f"Response saved as Markdown file under: {new_filename}")
 
+
 def call_ai(PROVIDER, model, prompt, chunk):
     if PROVIDER == 'google':
         response = model.generate_content(prompt + chunk).text
@@ -84,6 +83,7 @@ def call_ai(PROVIDER, model, prompt, chunk):
         )
         response = completion.choices[0].message.content
     return response
+
 
 def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_factor=0.3):
     for attempt in range(retries):
@@ -104,12 +104,10 @@ def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_fac
             return str(e)
 
 
-def process_text_file(PROVIDER, model, filename, directory_path, output_txt_dir, finished_dir):
-    print(f"\n=== Processing file: {filename} ===")
-    file_path = os.path.join(directory_path, filename)
-
+def process_text_file(PROVIDER, model, INPUT_FILE, directory_path, OUTPUT_FILE):
+    print(f"\n=== Processing file: {INPUT_FILE} ===")
     print("Reading file content...")
-    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(INPUT_FILE, 'r', encoding='utf-8', errors='ignore') as f:
         content = f.read()
     print("File content read.")
 
@@ -151,7 +149,8 @@ def process_text_file(PROVIDER, model, filename, directory_path, output_txt_dir,
 
         # Logging
         log_entry = {
-            "id": i + 1,
+            "chunk_id": i + 1,
+            "chunk_size": WORDS_PER_CHUNK,
             "status": "error" if error_message else "success",
             "message": error_message,
             "content": chunk,
@@ -159,15 +158,12 @@ def process_text_file(PROVIDER, model, filename, directory_path, output_txt_dir,
         }
         logging.info(json.dumps(log_entry, ensure_ascii=False))
 
-    base_filename = os.path.splitext(filename)[0]
-    full_response = f"## {base_filename}\n\n" + " ".join(responses)
+    # Concatenate responses to one single string.
+    responses_str = "\n\n".join(responses)
 
-    md_filename = os.path.join(output_txt_dir, f'{base_filename}_bearbeitet.md')
-    save_as_md(full_response, md_filename)
+    # Save response as MD-file
+    save_as_md(responses_str, OUTPUT_FILE)
 
-    print(f"Moving processed file to {finished_dir}...")
-    shutil.move(file_path, os.path.join(finished_dir, filename))
-    print(f"Processed file moved to {finished_dir}.")
-    print(f"=== Processing of {filename} completed ===\n")
+    print(f"=== Processing of {INPUT_FILE} completed ===\n")
 
 

@@ -162,7 +162,7 @@ def process_article(PROVIDER, model, article, processed_articles, checkpoint_fil
     return modified
 
 
-def process_xml_file(PROVIDER, file_path: str, model, checkpoint_file, output_file, start_article=0) -> ET.Element:
+def process_xml_file(PROVIDER, model, file_path: str, checkpoint_file, output_file, start_article=0) -> ET.Element:
     print(f"Processing XML file: {file_path}")
     parser = ET.XMLParser(encoding="utf-8")
     tree = ET.parse(file_path, parser=parser)

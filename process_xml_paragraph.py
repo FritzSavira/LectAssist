@@ -241,7 +241,7 @@ def process_article(PROVIDER, model, article, processed_articles, checkpoint_fil
     return article_modified
 
 
-def process_xml_file(PROVIDER, file_path: str, model, checkpoint_file, output_file, start_article=0) -> ET.Element:
+def process_xml_file(PROVIDER, model, INPUT_FILE: str, checkpoint_file, output_file, start_article=0) -> ET.Element:
     """
     Main function to process the XML file.
 
@@ -255,9 +255,9 @@ def process_xml_file(PROVIDER, file_path: str, model, checkpoint_file, output_fi
     Returns:
     ET.Element: The root element of the processed XML tree.
     """
-    print(f"Processing XML file: {file_path}")
+    print(f"Processing XML file: {INPUT_FILE}")
     parser = ET.XMLParser(encoding="utf-8")
-    tree = ET.parse(file_path, parser=parser)
+    tree = ET.parse(INPUT_FILE, parser=parser)
     root = tree.getroot()
     processed_articles = load_checkpoint(checkpoint_file)
     articles = root.findall('.//article')
@@ -268,5 +268,5 @@ def process_xml_file(PROVIDER, file_path: str, model, checkpoint_file, output_fi
             remove_redundant_p_tags(root)
             tree.write(output_file, encoding='utf-8', xml_declaration=True)
             print(f"XML file has been updated: {output_file}")
-    print(f"XML file has been processed successfully: {file_path}")
+    print(f"XML file has been processed successfully: {INPUT_FILE}")
     return root

@@ -11,7 +11,7 @@ PROCESSING_MODE = 'text'
 PROVIDER = 'openai'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_241011_B_mit_Ueb.xml'
+INPUT_FILENAME = 'Sovereign_grace_kurz.txt'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/'
@@ -19,7 +19,7 @@ FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
 OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 CHECKPOINT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
-OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.xml')
+OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.md')
 PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_process.log')
 ERROR_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_error.log')
 
@@ -57,13 +57,13 @@ def process_files(mode, model):
     print(f"Processing mode: {mode}")
     if mode == 'text':
         from process_txt import process_text_file
-        process_text_file(PROVIDER, model, INPUT_FILE, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
+        process_text_file(PROVIDER, model, INPUT_FILE, DIRECTORY_PATH, OUTPUT_FILE)
     elif mode == 'xml_paragraph':
         from process_xml_paragraph import process_xml_file
-        process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
+        process_xml_file(PROVIDER, model, INPUT_FILE, CHECKPOINT_FILE, OUTPUT_FILE)
     elif mode == 'xml_article':
         from process_xml_article import process_xml_file
-        process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
+        process_xml_file(PROVIDER, model, INPUT_FILE, CHECKPOINT_FILE, OUTPUT_FILE)
     else:
         print("No valid processing mode available. Select available processing mode")
 
