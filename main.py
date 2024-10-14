@@ -4,17 +4,17 @@ import logging
 import google.generativeai as genai
 from openai import OpenAI
 
-# Determine processing mode 'xml' or 'text'
-PROCESSING_MODE = 'xml_article'
+# Determine processing mode 'text' or 'xml_paragraph' or 'xml_article'
+PROCESSING_MODE = 'text'
 
-# Determine AI provider
+# Determine AI provider 'openai' or 'google'
 PROVIDER = 'openai'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_241009_out_TransBiblEnDe_AbsInXml_B.xml'
+INPUT_FILENAME = 'CalwerFULL_241011_B_mit_Ueb.xml'
 
 # File paths
-DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/'
+DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/'
 FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
 OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
@@ -57,13 +57,15 @@ def process_files(mode, model):
     print(f"Processing mode: {mode}")
     if mode == 'text':
         from process_txt import process_text_files
-        process_text_files(model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
+        process_text_files(PROVIDER, model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml_paragraph':
         from process_xml_paragraph import process_xml_file
         process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
     elif mode == 'xml_article':
         from process_xml_article import process_xml_file
         process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
+    else:
+        print("No valid processing mode available. Select available processing mode")
 
 
 def main():

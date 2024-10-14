@@ -67,7 +67,7 @@ def call_ai(PROVIDER, model, prompt, chunk):
         return completion.choices[0].message.content
 
 
-def generate_content_with_retries(PROVIDER, model, prompt: str, chunk: str) -> str:
+def generate_content_with_retries(PROVIDER, model, chunk: str) -> str:
     """
     Attempts to generate content using the AI model with a retry mechanism.
 
@@ -82,7 +82,7 @@ def generate_content_with_retries(PROVIDER, model, prompt: str, chunk: str) -> s
     for attempt in range(MAX_RETRIES):
         try:
             print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
-            return call_ai(PROVIDER, model, prompt, chunk)
+            return call_ai(PROVIDER, model, get_prompt(), chunk)
         except ConnectionError:
             if attempt < MAX_RETRIES - 1:
                 sleep_time = BACKOFF_FACTOR * (2 ** attempt)
@@ -173,7 +173,7 @@ def process_paragraph(PROVIDER, model, paragraph):
     content_text = get_text(paragraph)
     print("\n*** NEW PARAGRAPH ***")
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
-        response = generate_content_with_retries(PROVIDER, model, get_prompt(), content)
+        response = generate_content_with_retries(PROVIDER, model, content)
         response_text = re.sub(r'<[^>]+>', '', response)
         print("content_text: ")
         print(content_text)

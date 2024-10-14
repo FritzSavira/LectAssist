@@ -9,3 +9,43 @@ XML-Worflow
 Allgemeine Skripts
 check.py - Viewer für ..._process.log Datei
 statist_log.py - Wertet fehlerhafte Datensätze in ...process.log Datei aus.
+
+
+TXT-Workflow
+1. txt-Datei mit OCR von pdf-Screenshot erstellen
+2. process_txt.py - Korrigiere Rechtschreibung der txt-Datei aus 1.
+    prompt:'''Du bist ein Kenner der Schriften von D. Adolf Schlatter.
+            Deine Aufgabe ist es, das folgende Textfragment aus
+            D. Adolf Schlatters Buch Der Römerbrief von 1890
+            zu korrigieren.
+            Verbessere die durch fehlerhaften Scan entstandenen Rechtschreibfehler.
+            Gib ausschließlich den berichtigten Text zurück.
+            Hier beginnt der Text:'''
+3. process_txt.py - Lektoriere den korrigierten Text aus 2.
+    prompt = '''Du bist ein Kenner der Schriften von Professor D. Adolf Schlatter.
+                Deine Aufgabe ist es, das folgende Textfragment aus
+                D. Adolf Schlatters Buch Der Römerbrief von 1890 zu lektorieren
+
+                Deine Aufgaben sind:
+                1. Korrektur von Fehlern: Überprüfung und Korrektur von Rechtschreibung, Grammatik, Silbentrennung
+                und Interpunktion gemäß der aktuellen neuen deutschen Rechtschreibung.
+                2. Stilistische Verbesserungen: Passe den Schreibstil und die Ausdrucksweise dem aktuellen
+                Sprachgebrauch an. Ersetze veraltete Vokabeln, veraltete Ausdrücke und veraltete Redewendungen durch
+                zeitgemäße Vokabeln, Ausdrücke und Redewendungen. Formuliere den Text in einem lebendigen,
+                anschaulich berichtenden Erzählstil.
+                3. Optimiere die Struktur:
+                Zwischenüberschriften stehen zwischen zwei geschweiften Klammern {{ }}
+                und werden von dir stimmig und inhaltlich passend eingefügt.
+                4. Absätze stehen zwischen zwei eckigen Klammern [[ ]].
+                4. Bibelstellen stehen zwischen drei geschweiften Klammern Beispiel: {{{Röm. 8, 28-32}}}.
+
+                Optimierung für die Zielgruppe: Theologisch interessierter Leser mit guter Allgemeinbildung.
+
+                Gib ausschließlich den berichtigten Text zurück.
+                Hier beginnt der Text:'''
+4. Dateiname_WF123.md - Manuell nachbearbeiten und Markierungen für Überschriften, Absätzen
+    und Bibelstellen kontrollieren
+    { } Überschriften für Inhaltsverzeichnis
+    {{ }} Absatzüberschriften
+    {{{ }}} Verweise auf Bibelstellen
+    Prüfen, ob festgelegt Überschriften und Absätze passen.

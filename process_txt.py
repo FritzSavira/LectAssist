@@ -6,24 +6,42 @@ import logging
 import nltk
 from nltk.tokenize import sent_tokenize
 from requests.exceptions import ConnectionError
+from openai import OpenAI
 
 # Configuration variables
-WORDS_PER_CHUNK = 2000
+WORDS_PER_CHUNK = 500
+
+
+def get_prompt():
+    return '''Du bist ein professioneller Übersetzer und übersetzt christliche Bücher aus
+    der englischen in die deutsche Sprache.
+    Deine Aufgabe ist es, den folgenden Abschnitt des Buches von Dwight L. Moody
+    in die deutsche Sprache zu übersetzen.
+
+    1. Textinhalt und Stil:       
+    - Übersetze sehr nah am englischen Text.
+    - Der Ausdruck und sprachliche Stil des ursprünglichen Textes muss erhalten bleiben.
+    - Die ursprüngliche semantische Bedeutung der Aussagen muss erhalten bleiben.
+
+
+    2. Formatierung:
+    - Formatiere Bibelstellen-Angaben ins Standard-Format (z.B. Römer 8 Vers 28 bis 31 soll Römer 8,28–31 heißen).
+    - Vorhandene Überschriften bleiben erhalten. 
+    - Strukturiere den Text in Absätze, um ein lesefreundliches Layout zu gewährleisten.
+    Hier beginnt der Text:'''
+
+
 
 
 def setup_environment(output_txt_dir, finished_dir):
-    print("=== Initializing the environment ===")
+
     print(f"Number of words per section for processing: {WORDS_PER_CHUNK}")
 
     print("Downloading NLTK punkt tokenizer...")
     nltk.download('punkt')
     print("NLTK punkt tokenizer downloaded.")
 
-    print("Checking output directories...")
-    os.makedirs(output_txt_dir, exist_ok=True)
-    os.makedirs(finished_dir, exist_ok=True)
-    print("Output directories checked/created.")
-    print("=== Initialization completed ===\n")
+
 
 
 def split_text(text, words_per_chunk):
@@ -64,12 +82,35 @@ def save_as_md(text, filename):
         f.write(text)
     print(f"Response saved as Markdown file under: {new_filename}")
 
+def call_ai(PROVIDER, model, prompt, chunk):
+    print("prompt: :", prompt)
+    print("chunk: ", chunk)
+    if PROVIDER == 'google':
+        response = model.generate_content(prompt + chunk).text
+    elif PROVIDER == 'openai':
+        client = OpenAI()
 
-def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_factor=0.3):
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {
+                    "role": "user",
+                    "content": chunk
+                }
+            ],
+            temperature=0.6
+        )
+        response = completion.choices[0].message.content
+    print("response:", response)
+    return response
+
+def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_factor=0.3):
     for attempt in range(retries):
         try:
             print(f"Attempting content generation (Attempt {attempt + 1}/{retries})...")
-            return model.generate_content(prompt + chunk)
+            response = call_ai(PROVIDER, model, get_prompt(), chunk)
+            return response
         except ConnectionError as e:
             if attempt < retries - 1:
                 sleep_time = backoff_factor * (2 ** attempt)
@@ -83,7 +124,8 @@ def generate_content_with_retries(model, prompt, chunk, retries=5, backoff_facto
             return str(e)
 
 
-def process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir):
+
+def process_file(filename, PROVIDER, model, directory_path, output_txt_dir, finished_dir):
     print(f"\n=== Processing file: {filename} ===")
     file_path = os.path.join(directory_path, filename)
 
@@ -102,9 +144,8 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
         print(f"Generating response for section {i + 1}/{len(text_chunks)}...")
         try:
             time.sleep(1)
-            response = generate_content_with_retries(model, prompt, chunk)
-            if response.parts:
-                response_text = response.text
+            response_text = generate_content_with_retries(PROVIDER, model, chunk)
+            if response_text:
                 responses.append(response_text)
                 print(f"Response generated for section {i + 1}.")
             else:
@@ -130,7 +171,7 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
             "status": "error" if error_message else "success",
             "message": error_message,
             "content": chunk,
-            "response": response_text or str(response),
+            "response": response_text
         }
         logging.info(json.dumps(log_entry, ensure_ascii=False))
 
@@ -146,25 +187,13 @@ def process_file(filename, model, prompt, directory_path, output_txt_dir, finish
     print(f"=== Processing of {filename} completed ===\n")
 
 
-def process_text_files(model, directory_path, output_txt_dir, finished_dir):
-    setup_environment(output_txt_dir, finished_dir)
+def process_text_files(PROVIDER, model, directory_path, output_txt_dir, finished_dir):
 
-    prompt = '''Du bist ein professioneller Übersetzer und übersetzt christliche Bücher aus
-        der englischen in die deutsche Sprache.
-        Deine Aufgabe ist es, den folgenden Abschnitt des Buches Sovereign Grace von Dwight L. Moody
-        in die deutsche Sprache zu übersetzen.
+    print(f"Number of words per section for processing: {WORDS_PER_CHUNK}")
+    print("Downloading NLTK punkt tokenizer...")
+    nltk.download('punkt')
+    print("NLTK punkt tokenizer downloaded.")
 
-        1. Textinhalt und Stil:       
-        - Übersetze sehr nah am englischen Text.
-        - Der Ausdruck und sprachliche Stil des ursprünglichen Textes muss erhalten bleiben.
-        - Die ursprüngliche semantische Bedeutung der Aussagen muss erhalten bleiben.
-
-
-        2. Formatierung:
-        - Formatiere Bibelstellen-Angaben ins Standard-Format (z.B. Römer 8 Vers 28 bis 31 soll Römer 8,28–31 heißen).
-        - Vorhandene Überschriften bleiben erhalten. 
-        - Strukturiere den Text in Absätze, um ein lesefreundliches Layout zu gewährleisten.
-        Hier beginnt der Text:'''
 
     print(f"Searching for .txt files in {directory_path}...")
     valid_files = [f for f in os.listdir(directory_path) if f.endswith('.txt')]
@@ -172,6 +201,6 @@ def process_text_files(model, directory_path, output_txt_dir, finished_dir):
 
     for i, filename in enumerate(valid_files):
         print(f"\nProcessing file {i + 1}/{len(valid_files)}: {filename}")
-        process_file(filename, model, prompt, directory_path, output_txt_dir, finished_dir)
+        process_file(filename, PROVIDER, model, directory_path, output_txt_dir, finished_dir)
 
     print("=== Script has processed all files ===")
