@@ -31,19 +31,6 @@ def get_prompt():
     Hier beginnt der Text:'''
 
 
-
-
-def setup_environment(output_txt_dir, finished_dir):
-
-    print(f"Number of words per section for processing: {WORDS_PER_CHUNK}")
-
-    print("Downloading NLTK punkt tokenizer...")
-    nltk.download('punkt')
-    print("NLTK punkt tokenizer downloaded.")
-
-
-
-
 def split_text(text, words_per_chunk):
     print(f"Splitting text into sections with {words_per_chunk} words each...")
     sentences = sent_tokenize(text)
@@ -83,26 +70,19 @@ def save_as_md(text, filename):
     print(f"Response saved as Markdown file under: {new_filename}")
 
 def call_ai(PROVIDER, model, prompt, chunk):
-    print("prompt: :", prompt)
-    print("chunk: ", chunk)
     if PROVIDER == 'google':
         response = model.generate_content(prompt + chunk).text
     elif PROVIDER == 'openai':
         client = OpenAI()
-
         completion = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": prompt},
-                {
-                    "role": "user",
-                    "content": chunk
-                }
+                {"role": "user", "content": chunk}
             ],
             temperature=0.6
         )
         response = completion.choices[0].message.content
-    print("response:", response)
     return response
 
 def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_factor=0.3):
@@ -124,8 +104,7 @@ def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_fac
             return str(e)
 
 
-
-def process_file(filename, PROVIDER, model, directory_path, output_txt_dir, finished_dir):
+def process_text_file(PROVIDER, model, filename, directory_path, output_txt_dir, finished_dir):
     print(f"\n=== Processing file: {filename} ===")
     file_path = os.path.join(directory_path, filename)
 
@@ -146,6 +125,11 @@ def process_file(filename, PROVIDER, model, directory_path, output_txt_dir, fini
             time.sleep(1)
             response_text = generate_content_with_retries(PROVIDER, model, chunk)
             if response_text:
+                print("chunk: ")
+                print(chunk)
+                print()
+                print("response_text: ")
+                print(response_text)
                 responses.append(response_text)
                 print(f"Response generated for section {i + 1}.")
             else:
@@ -187,20 +171,3 @@ def process_file(filename, PROVIDER, model, directory_path, output_txt_dir, fini
     print(f"=== Processing of {filename} completed ===\n")
 
 
-def process_text_files(PROVIDER, model, directory_path, output_txt_dir, finished_dir):
-
-    print(f"Number of words per section for processing: {WORDS_PER_CHUNK}")
-    print("Downloading NLTK punkt tokenizer...")
-    nltk.download('punkt')
-    print("NLTK punkt tokenizer downloaded.")
-
-
-    print(f"Searching for .txt files in {directory_path}...")
-    valid_files = [f for f in os.listdir(directory_path) if f.endswith('.txt')]
-    print(f"{len(valid_files)} valid files found.")
-
-    for i, filename in enumerate(valid_files):
-        print(f"\nProcessing file {i + 1}/{len(valid_files)}: {filename}")
-        process_file(filename, PROVIDER, model, directory_path, output_txt_dir, finished_dir)
-
-    print("=== Script has processed all files ===")

@@ -46,10 +46,7 @@ def call_ai(PROVIDER, model, prompt, chunk):
             model=model,
             messages=[
                 {"role": "system", "content": prompt},
-                {
-                    "role": "user",
-                    "content": chunk
-                }
+                {"role": "user", "content": chunk}
             ],
             temperature=0.4
         )

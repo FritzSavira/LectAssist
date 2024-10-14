@@ -56,8 +56,8 @@ def process_files(mode, model):
     """Process files based on the selected mode."""
     print(f"Processing mode: {mode}")
     if mode == 'text':
-        from process_txt import process_text_files
-        process_text_files(PROVIDER, model, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
+        from process_txt import process_text_file
+        process_text_file(PROVIDER, model, INPUT_FILE, DIRECTORY_PATH, OUTPUT_TXT_PATH, FINISHED_PATH)
     elif mode == 'xml_paragraph':
         from process_xml_paragraph import process_xml_file
         process_xml_file(PROVIDER, INPUT_FILE, model, CHECKPOINT_FILE, OUTPUT_FILE)
