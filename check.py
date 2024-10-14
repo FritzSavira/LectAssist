@@ -1,3 +1,11 @@
+'''Erzeugt zwei Fenster auf dem Bildschirm, in dem der Inhalt der Logdatei angezeigt wird.
+In dem linken Fenster wird der originale Text (content) angezeigt.
+In dem rechten Fenster wird der ausgegebene Text (response) angezeigt.
+Es wird der Unterschied zwischen beiden Texten dergestalt markiert, dass Text,
+der im originalen Text (linkes Fenster) ersetzt wurde in roter Schriftfarbe angezeigt wird.
+Text, der im ausgegebenen Text (rechtes Fenster) ergänzt wurde, wird in grüner Schriftfarbe angezeigt.'''
+
+
 import tkinter as tk
 from tkinter import filedialog, scrolledtext
 import json

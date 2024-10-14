@@ -3,8 +3,7 @@ import time
 import json
 import logging
 from nltk.tokenize import sent_tokenize
-from requests.exceptions import ConnectionError
-from main import call_ai
+from main import generate_content_with_retries
 
 # Configuration variables
 WORDS_PER_CHUNK = 500
@@ -68,25 +67,6 @@ def save_as_md(text, filename):
     print(f"Response saved as Markdown file under: {new_filename}")
 
 
-def generate_content_with_retries(PROVIDER, model, chunk, retries=5, backoff_factor=0.3):
-    for attempt in range(retries):
-        try:
-            print(f"Attempting content generation (Attempt {attempt + 1}/{retries})...")
-            response = call_ai(PROVIDER, model, get_prompt(), chunk)
-            return response
-        except ConnectionError as e:
-            if attempt < retries - 1:
-                sleep_time = backoff_factor * (2 ** attempt)
-                print(f"Connection error. Retrying in {sleep_time} seconds...")
-                time.sleep(sleep_time)
-            else:
-                print("Maximum number of attempts reached. Connection not possible.")
-                raise e
-        except Exception as e:
-            print(f"An error occurred in generate_content(): {e}")
-            return str(e)
-
-
 def process_text_file(PROVIDER, model, INPUT_FILE, directory_path, OUTPUT_FILE):
     print(f"\n=== Processing file: {INPUT_FILE} ===")
     print("Reading file content...")
@@ -104,7 +84,7 @@ def process_text_file(PROVIDER, model, INPUT_FILE, directory_path, OUTPUT_FILE):
         print(f"Generating response for section {i + 1}/{len(text_chunks)}...")
         try:
             time.sleep(1)
-            response_text = generate_content_with_retries(PROVIDER, model, chunk)
+            response_text = generate_content_with_retries(PROVIDER, model, chunk, get_prompt())
             if response_text:
                 print("chunk: ")
                 print(chunk)

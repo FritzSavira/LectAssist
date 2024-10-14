@@ -1,14 +1,11 @@
 import os
 import re
-import time
 import logging
 import json
 import xml.etree.ElementTree as ET
-from main import call_ai
+from main import generate_content_with_retries
 
 MIN_WORDS_ARTICLE = 50
-MAX_RETRIES = 5
-BACKOFF_FACTOR = 0.3
 
 
 def get_prompt():
@@ -34,24 +31,6 @@ Hinweis: Hier beginnt der lexikalische Eintrag:'''
 
 def get_text(element: ET.Element) -> str:
     return ''.join(element.itertext())
-
-
-def generate_content_with_retries(PROVIDER, model, chunk: str) -> str:
-    for attempt in range(MAX_RETRIES):
-        try:
-            print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
-            return call_ai(PROVIDER, model, get_prompt(), chunk)
-        except ConnectionError:
-            if attempt < MAX_RETRIES - 1:
-                sleep_time = BACKOFF_FACTOR * (2 ** attempt)
-                print(f"Connection error. Retrying in {sleep_time} seconds...")
-                time.sleep(sleep_time)
-            else:
-                print("Maximum number of attempts reached. Connection not possible.")
-                raise
-        except Exception as e:
-            print(f"An error occurred in generate_content(): {e}")
-            return str(e)
 
 
 def load_checkpoint(checkpoint_file):
@@ -103,7 +82,7 @@ def process_article(PROVIDER, model, article, processed_articles, checkpoint_fil
 
     print("\n*** NEW ARTICLE ***")
     if len(content_text.split()) > MIN_WORDS_ARTICLE:
-        response = generate_content_with_retries(PROVIDER, model, content)
+        response = generate_content_with_retries(PROVIDER, model, content, get_prompt())
         response_text = re.sub(r'<[^>]+>', '', response)
         print("content_text: ")
         print(content_text)

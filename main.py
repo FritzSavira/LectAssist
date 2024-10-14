@@ -1,17 +1,23 @@
+''''Steuert die Verarbeitung von A) Processing mode, B) Wahl des LLM-Providers, C) Engabe- und Ausgabedateien
+Enthällt Funktionen, die von Skripten gemeinsam aufgerufen werden, z.B.: configure_logging(), configure_api(),
+call_ai(), generate_content_with_retries().'''
+
 import sys
 import os
+import time
 import logging
+from requests.exceptions import ConnectionError
 import google.generativeai as genai
 from openai import OpenAI
 
 # Determine processing mode 'text' or 'xml_paragraph' or 'xml_article'
-PROCESSING_MODE = 'xml_article'
+PROCESSING_MODE = 'text'
 
 # Determine AI provider 'openai' or 'google'
 PROVIDER = 'openai'
 
 # Input filename
-INPUT_FILENAME = 'CalwerFULL_241011_B_mit_Ueb.xml'
+INPUT_FILENAME = 'Sovereign_grace_kurz.txt'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/'
@@ -19,9 +25,13 @@ FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
 OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 CHECKPOINT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
-OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out.xml')
+OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out')
 PROCESS_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_process.log')
 ERROR_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_error.log')
+
+# Constants
+MAX_RETRIES = 5  # Maximum number of retries for content generation
+BACKOFF_FACTOR = 0.3  # Factor for exponential backoff in case of connection errors
 
 
 def configure_logging():
@@ -66,6 +76,34 @@ def call_ai(PROVIDER, model, prompt, chunk):
         )
         response = completion.choices[0].message.content
     return response
+
+def generate_content_with_retries(PROVIDER, model, chunk: str, prompt) -> str:
+    """
+    Attempts to generate content using the AI model with a retry mechanism.
+
+    Args:
+    model: The AI model used for content generation.
+    prompt (str): The prompt to guide the AI's response.
+    chunk (str): The text chunk to be processed.
+
+    Returns:
+    str: The generated content or an error message.
+    """
+    for attempt in range(MAX_RETRIES):
+        try:
+            print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
+            return call_ai(PROVIDER, model, prompt, chunk)
+        except ConnectionError:
+            if attempt < MAX_RETRIES - 1:
+                sleep_time = BACKOFF_FACTOR * (2 ** attempt)
+                print(f"Connection error. Retrying in {sleep_time} seconds...")
+                time.sleep(sleep_time)
+            else:
+                print("Maximum number of attempts reached. Connection not possible.")
+                raise
+        except Exception as e:
+            print(f"An error occurred in generate_content(): {e}")
+            return str(e)
 
 def process_files(mode, model):
     """Process files based on the selected mode."""

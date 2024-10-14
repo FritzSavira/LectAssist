@@ -1,15 +1,13 @@
 import os
 import re
-import time
 import logging
 import json
 import xml.etree.ElementTree as ET
-from main import call_ai
+from main import generate_content_with_retries
 
 # Constants
 MIN_WORDS_PARAGRAPH = 5  # Minimum number of words for a paragraph to be processed
-MAX_RETRIES = 5  # Maximum number of retries for content generation
-BACKOFF_FACTOR = 0.3  # Factor for exponential backoff in case of connection errors
+
 
 def get_prompt():
     """
@@ -46,36 +44,6 @@ def get_text(element: ET.Element) -> str:
     str: The concatenated text content of the element and its children.
     """
     return ''.join(element.itertext())
-
-
-
-def generate_content_with_retries(PROVIDER, model, chunk: str) -> str:
-    """
-    Attempts to generate content using the AI model with a retry mechanism.
-
-    Args:
-    model: The AI model used for content generation.
-    prompt (str): The prompt to guide the AI's response.
-    chunk (str): The text chunk to be processed.
-
-    Returns:
-    str: The generated content or an error message.
-    """
-    for attempt in range(MAX_RETRIES):
-        try:
-            print(f"Attempting content generation (Attempt {attempt + 1}/{MAX_RETRIES})...")
-            return call_ai(PROVIDER, model, get_prompt(), chunk)
-        except ConnectionError:
-            if attempt < MAX_RETRIES - 1:
-                sleep_time = BACKOFF_FACTOR * (2 ** attempt)
-                print(f"Connection error. Retrying in {sleep_time} seconds...")
-                time.sleep(sleep_time)
-            else:
-                print("Maximum number of attempts reached. Connection not possible.")
-                raise
-        except Exception as e:
-            print(f"An error occurred in generate_content(): {e}")
-            return str(e)
 
 
 def load_checkpoint(checkpoint_file):
@@ -155,7 +123,7 @@ def process_paragraph(PROVIDER, model, paragraph):
     content_text = get_text(paragraph)
     print("\n*** NEW PARAGRAPH ***")
     if len(content_text.split()) > MIN_WORDS_PARAGRAPH:
-        response = generate_content_with_retries(PROVIDER, model, content)
+        response = generate_content_with_retries(PROVIDER, model, content, get_prompt())
         response_text = re.sub(r'<[^>]+>', '', response)
         print("content_text: ")
         print(content_text)

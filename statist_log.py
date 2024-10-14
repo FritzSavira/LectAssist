@@ -1,3 +1,5 @@
+'''Wertet die .log-Datei statistisch aus und schreibt das Ergebnis in eine .txt-Datei.'''
+
 import pandas as pd
 import json
 import os

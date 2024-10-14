@@ -1,3 +1,6 @@
+'''Übersetzt die von dem LLM in den Text eingefügten Überschriften {{Überschrift}} in xml-Elemente
+im Logos xml-Format.'''
+
 # Import der notwendigen Bibliothek
 from lxml import etree
 import os

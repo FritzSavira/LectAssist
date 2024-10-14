@@ -1,3 +1,6 @@
+'''Übersetzt die englischen Bibelstellenverweise in standardisierte deutsche Labels im Text
+im Logos xml-Format.'''
+
 import xml.etree.ElementTree as ET
 import os
 
