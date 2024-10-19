@@ -33,7 +33,6 @@ ERROR_LOG_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[
 MAX_RETRIES = 5  # Maximum number of retries for content generation
 BACKOFF_FACTOR = 0.3  # Factor for exponential backoff in case of connection errors
 
-
 def configure_logging():
     """Set up logging configuration."""
     logging.basicConfig(

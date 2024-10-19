@@ -14,7 +14,7 @@ OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/logos_tags/bearbeite
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_TransBiblEnDe.xml')
 
-transl_bibl_books = {
+transl_bibl_en_de = {
     "Bible:Ge": "1Mos.",
     "Bible:Ex": "2Mos.",
     "Bible:Le": "3Mos.",
@@ -100,6 +100,84 @@ transl_bibl_books = {
     "Bible:He": "Hen."
 }
 
+trans_bibl_de_en = {
+    "1Mos.": "Bible:Ge",
+    "2Mos.": "Bible:Ex",
+    "3Mos.": "Bible:Le",
+    "4Mos.": "Bible:Nu",
+    "5Mos.": "Bible:Dt",
+    "Jos.": "Bible:Jos",
+    "Richt.": "Bible:Jdg",
+    "Ruth": "Bible:Ru",
+    "1Sam.": "Bible:1 Sa",
+    "2Sam.": "Bible:2 Sa",
+    "1Kön.": "Bible:1 Ki",
+    "2Kön.": "Bible:2 Ki",
+    "1Chr.": "Bible:1 Ch",
+    "2Chr.": "Bible:2 Ch",
+    "Esr.": "Bible:Ezr",
+    "Neh.": "Bible:Ne",
+    "Est.": "Bible:Es",
+    "Hiob": "Bible:Job",
+    "Psa.": "Bible:Ps",
+    "Spr.": "Bible:Pr",
+    "Pred.": "Bible:Ec",
+    "Hohel.": "Bible:So",
+    "Jes.": "Bible:Is",
+    "Jer.": "Bible:Je",
+    "Kla.": "Bible:La",
+    "Hes.": "Bible:Eze",
+    "Dan.": "Bible:Da",
+    "Hos.": "Bible:Ho",
+    "Joe.": "Bible:Joe",
+    "Amos": "Bible:Am",
+    "Oba.": "Bible:Ob",
+    "Jon.": "Bible:Jon",
+    "Micha": "Bible:Mic",
+    "Nah.": "Bible:Na",
+    "Hab.": "Bible:Hab",
+    "Zef.": "Bible:Zep",
+    "Hag.": "Bible:Hag",
+    "Sach.": "Bible:Zec",
+    "Mal.": "Bible:Mal",
+    "Matth.": "Bible:Mt",
+    "Mark.": "Bible:Mk",
+    "Luk.": "Bible:Lk",
+    "Joh.": "Bible:Jn",
+    "Apg.": "Bible:Ac",
+    "Röm.": "Bible:Ro",
+    "1Kor.": "Bible:1 Co",
+    "2Kor.": "Bible:2 Co",
+    "Gal.": "Bible:Ga",
+    "Eph.": "Bible:Eph",
+    "Phil.": "Bible:Php",
+    "Kol.": "Bible:Col",
+    "1Thes.": "Bible:1 Th",
+    "2Thes.": "Bible:2 Th",
+    "1Tim.": "Bible:1 Ti",
+    "2Tim.": "Bible:2 Ti",
+    "Tit.": "Bible:Tt",
+    "Philem.": "Bible:Phm",
+    "Hebr.": "Bible:Heb",
+    "Jak.": "Bible:Jas",
+    "1Petr.": "Bible:1 Pe",
+    "2Petr.": "Bible:2 Pe",
+    "1Joh.": "Bible:1 Jn",
+    "2Joh.": "Bible:2 Jn",
+    "3Joh.": "Bible:3 Jn",
+    "Jud.": "Bible:Jud",
+    "Offb.": "Bible:Re",
+    "Sir.": "Bible:Sir",
+    "1Makk.": "Bible:1 Mac",
+    "2Makk.": "Bible:2 Mac",
+    "Weish.": "Bible:Wis",
+    "Judit": "Bible:Jdt",
+    "Tob.": "Bible:Tob",
+    "Sus.": "Bible:Sus",
+    "Bel.": "Bible:Bel",
+    "Bar.": "Bible:Bar",
+    "Hen.": "Bible:He"
+}
 
 def read_xml_file(input_file):
     """ Function to read the XML file. """
@@ -148,7 +226,7 @@ def find_second_colon(text):
     return -1
 
 
-def find_and_translate_bible_elements(root, transl_bibl_books):
+def find_and_translate_bible_elements(root, transl_bibl_en_de):
     elements_to_modify = []
     for elem in root.iter('data'):
         ref = elem.get('ref', '')
@@ -172,7 +250,7 @@ def find_and_translate_bible_elements(root, transl_bibl_books):
         ohne_kap_vers_elem = mit_kap_vers_elem.find(' ', 8)
         bibl_books_en = elem_str[start_elem:end_tag_elem][
                         :ohne_kap_vers_elem]  # Das ist der String mit dem man als Schlüssel das Dictionary durchsucht.
-        bibl_books_de = transl_bibl_books[bibl_books_en]
+        bibl_books_de = transl_bibl_en_de[bibl_books_en]
 
         # Kapitel und Vers aus englischer in deutsche Schreibweise übersetzen
         start_elem_vers = elem_str[:end_tag_elem]
@@ -183,7 +261,6 @@ def find_and_translate_bible_elements(root, transl_bibl_books):
         bible_ref_de = bibl_books_de + elem_vers_de
         print("bible_ref_de: ", bible_ref_de)
         elem.text = bible_ref_de
-
 
     return root
 
@@ -196,7 +273,7 @@ def main():
     # Step 2: Finden und Drucken der gewünschten XML-Elemente
     root = tree.getroot()
     print(root)
-    root = find_and_translate_bible_elements(root, transl_bibl_books)
+    root = find_and_translate_bible_elements(root, transl_bibl_en_de)
 
     # Step 3: Ensure output directory exists
     output_dir = os.path.dirname(OUTPUT_FILE)
