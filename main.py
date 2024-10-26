@@ -17,10 +17,10 @@ PROCESSING_MODE = 'text'
 PROVIDER = 'openai'
 
 # Input filename
-INPUT_FILENAME = 'Sovereign_grace_kurz.txt'
+INPUT_FILENAME = 'Schlatter_Der_Roemerbrief_WF1234_gpt-o4.txt'
 
 # File paths
-DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/'
+DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/Schlatter/Der_Roemerbrief/'
 FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
 OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)

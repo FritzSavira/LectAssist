@@ -6,25 +6,18 @@ from nltk.tokenize import sent_tokenize
 from main import generate_content_with_retries
 
 # Configuration variables
-WORDS_PER_CHUNK = 500
+WORDS_PER_CHUNK = 1500
 
 
 def get_prompt():
-    return '''Du bist ein professioneller Übersetzer und übersetzt christliche Bücher aus
-    der englischen in die deutsche Sprache.
-    Deine Aufgabe ist es, den folgenden Abschnitt des Buches von Dwight L. Moody
-    in die deutsche Sprache zu übersetzen.
-
-    1. Textinhalt und Stil:       
-    - Übersetze sehr nah am englischen Text.
-    - Der Ausdruck und sprachliche Stil des ursprünglichen Textes muss erhalten bleiben.
-    - Die ursprüngliche semantische Bedeutung der Aussagen muss erhalten bleiben.
-
-
-    2. Formatierung:
-    - Formatiere Bibelstellen-Angaben ins Standard-Format (z.B. Römer 8 Vers 28 bis 31 soll Römer 8,28–31 heißen).
-    - Vorhandene Überschriften bleiben erhalten. 
-    - Strukturiere den Text in Absätze, um ein lesefreundliches Layout zu gewährleisten.
+    return '''Du bist ein professioneller Lektor und bearbeitest einen Text
+    von D. A. Schlatter 'Der Römerbrief' von 1890.
+    In dem Text wir manchmal "der Jude" als Synonym für einen Menschen jüdischen 
+    Glaubens verwendet.
+    Deine Aufgabe: Analysiere die übergebenen Textabschnitte.
+    Die Formulierung "der Jude" soll vermieden werden. Formuliere die Textstellen um, die den Begriff "der Jude"
+    enthalten. Der Rest des Textes wird nicht geändert.
+    Gib ausschließlich den Text zurück. Vermeide jeglichen ergänzenden Kommentar 
     Hier beginnt der Text:'''
 
 

@@ -43,9 +43,11 @@ TXT-Workflow
 
                 Gib ausschließlich den berichtigten Text zurück.
                 Hier beginnt der Text:'''
-4. Dateiname_WF123.md - Manuell nachbearbeiten und Markierungen für Überschriften, Absätzen
+4. dateiname_WF123.md - Manuell nachbearbeiten und Markierungen für Überschriften, Absätzen
     und Bibelstellen kontrollieren
     { } Überschriften für Inhaltsverzeichnis
     {{ }} Absatzüberschriften
     {{{ }}} Verweise auf Bibelstellen
     Prüfen, ob festgelegt Überschriften und Absätze passen.
+    Manuel nachbearbeitete Datei unter dateiname_WF1234.md abspeichern
+5. create_logos_xml.py - wandle den md-Text aus dateiname_WF1234.md in Logos-xml-Format um.

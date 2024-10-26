@@ -4,7 +4,7 @@ import re
 
 
 # Input filename
-INPUT_FILENAME = 'Schlatter_Der_Roemerbrief_WF1234_gpt-o4.txt'
+INPUT_FILENAME = 'Schlatter_Der_Roemerbrief_WF1234_gpt-o4.md'
 
 # File paths
 DIRECTORY_PATH = 'C:/Users/Fried/documents/LectorAssistant/Schlatter/Der_Roemerbrief/'
@@ -50,9 +50,6 @@ with open(INPUT_FILE, 'r', encoding='utf-8') as datei:
 xml_header = '''<logos-resource-content xmlns:xsi=
         "http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="X:\\Schema\\content.xsd">
         </logos-resource-content>'''
-
-from lxml import etree
-import re
 
 # Create the root element
 # Parse the XML header and get the root element
@@ -148,6 +145,14 @@ for i in range(len(matches)):
             p_element = etree.SubElement(article_element, 'p')
             # Process para_text for pattern_bible matches
             process_para_text(para_text, p_element)
+
+        elif match_type == 'paragraph':
+            # Create a 'p' element under 'article' with style attribute
+            style_string = create_style_string()
+            p_element = etree.SubElement(article_element, 'p', style=style_string)
+            # Process para_text for pattern_bible matches
+            process_para_text(para_text, p_element)
+
 
     # Increment the article counter
     article_count += 1
