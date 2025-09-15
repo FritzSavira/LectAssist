@@ -9,20 +9,24 @@ import logging
 from requests.exceptions import ConnectionError
 import google.generativeai as genai
 from openai import OpenAI
+import json
+from aio_straico import straico_client
+from StraicoModelleLesen import StraicoModelleLesen
 
 # Determine processing mode 'text' or 'xml_paragraph' or 'xml_article'
 PROCESSING_MODE = 'text'
 
-# Determine AI provider 'openai' or 'google'
-PROVIDER = 'openai'
+# Determine AI provider 'openai' or 'google' or 'straico'
+PROVIDER = 'straico'
+API_KEY = os.environ.get('STRAICO_API_KEY')
 
 # Input filename
-INPUT_FILENAME = 'Schlatter_Der_Roemerbrief_WF1234_gpt-o4.txt'
+INPUT_FILENAME = 'Bible_Character_en.txt'
 
 # File paths
-DIRECTORY_PATH = 'C:/Users/Fried/Documents/LectorAssistant/Schlatter/Der_Roemerbrief/'
-FINISHED_PATH = 'C:/Users/Fried/documents/LectorAssistant/erledigt/'
-OUTPUT_TXT_PATH = 'C:/Users/Fried/documents/LectorAssistant/bearbeitet_txt/'
+DIRECTORY_PATH = 'C:/Users/Fried/OneDrive/Dokumente/LectorAssistant_sync/Moody/Bible_Characters'
+FINISHED_PATH = 'C:/Users/Fried/OneDrive/Dokumente/LectorAssistant_sync/erledigt/'
+OUTPUT_TXT_PATH = 'C:/Users/Fried/OneDrive/Dokumente/LectorAssistant_sync/bearbeitet_txt/'
 INPUT_FILE = os.path.join(DIRECTORY_PATH, INPUT_FILENAME)
 CHECKPOINT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_check.json')
 OUTPUT_FILE = os.path.join(OUTPUT_TXT_PATH, os.path.splitext(INPUT_FILENAME)[0]+'_out')
@@ -57,8 +61,12 @@ def configure_api():
     elif PROVIDER == 'openai':
         model_name = 'gpt-4o'
         return model_name
+    elif PROVIDER == 'straico':
+        model_name = StraicoModelleLesen()
+        return model_name
     else:
-        pass
+        print("No valid AI provider determined")
+
 
 def call_ai(PROVIDER, model, prompt, chunk):
     if PROVIDER == 'google':
@@ -74,7 +82,12 @@ def call_ai(PROVIDER, model, prompt, chunk):
             temperature=0.6
         )
         response = completion.choices[0].message.content
+    elif PROVIDER == 'straico':
+        with straico_client() as client:
+            reply = client.prompt_completion(model, prompt + chunk)
+            response = reply['completion']['choices'][0]['message']['content']
     return response
+
 
 def generate_content_with_retries(PROVIDER, model, chunk: str, prompt) -> str:
     """
@@ -136,11 +149,7 @@ def main():
         model = configure_api()
         print("API configured successfully.")
 
-        # Step 3: Initialize the model
-#        model = initialize_model()
-#        print("Model initialized.")
-
-        # Step 4: Process files
+        # Step 3: Process files
         process_files(PROCESSING_MODE, model)
         print("Processing completed successfully.")
 

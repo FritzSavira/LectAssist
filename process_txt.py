@@ -6,20 +6,24 @@ from nltk.tokenize import sent_tokenize
 from main import generate_content_with_retries
 
 # Configuration variables
-WORDS_PER_CHUNK = 1500
+WORDS_PER_CHUNK = 500
 
 
 def get_prompt():
-    return '''Du bist ein professioneller Lektor und bearbeitest einen Text
-    von D. A. Schlatter 'Der Römerbrief' von 1890.
-    In dem Text wir manchmal "der Jude" als Synonym für einen Menschen jüdischen 
-    Glaubens verwendet.
-    Deine Aufgabe: Analysiere die übergebenen Textabschnitte.
-    Die Formulierung "der Jude" soll vermieden werden. Formuliere die Textstellen um, die den Begriff "der Jude"
-    enthalten. Der Rest des Textes wird nicht geändert.
-    Gib ausschließlich den Text zurück. Vermeide jeglichen ergänzenden Kommentar 
-    Hier beginnt der Text:'''
-
+    return '''
+    You are a professional proofreader editing a fragment of text by D. L. Moody.
+    The phrasing and sentence structure are very similar to the original 19th century English text.
+    
+    Your task: 1. Translate the given text fragment into an English that
+    that corresponds to the current linguistic sensibilities of the year 2020.
+    2. In the text, Moody frequently uses examples, metaphors, and similes from the experiences of the 19th century.
+    of the 19th century. Transfer the examples, metaphors, and similes to the world of experience
+    of the 21st century,
+    the semantic meaning must remain the same.
+    3.Quotations with a biblical context are not changed.
+    Important Note: Return only the edited text. Avoid any additional commentary. 
+    This is where the text begins:
+    '''
 
 def split_text(text, words_per_chunk):
     print(f"Splitting text into sections with {words_per_chunk} words each...")

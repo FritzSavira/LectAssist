@@ -14,7 +14,7 @@ def get_prompt():
     Returns the prompt for the AI model in German.
     This prompt instructs the AI on how to process and edit the lexicon entries.
     """
-    return '''Du bist ein KI-Assistent, als professioneller Lektor lektorierst du ein Lexikon.
+    return '''Du bist ein professioneller Lektor und lektorierst ein Lexikon.
 
 Prämisse:
 - XML-Tags und XML-Elemente müssen an ihrer ursprünglichen Position bleiben.
